@@ -6,6 +6,7 @@
 <title>Marketing Competi — Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#F5F3EE;--surface:#FFF;--s2:#F0EDE6;--border:#E2DDD4;--bf:#2A2A2A;--text:#1A1A1A;--muted:#8C8880;--a1:#00C884;--a2:#C94040;--a3:#B8860B;--a4:#8324FE;--a5:#B85C1A;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -188,7 +189,7 @@ textarea{resize:vertical;min-height:80px;}
     </div>
     <!-- MÉTRICAS -->
     <div class="page" id="page-metricas">
-      <div class="ph"><div><h2>Métricas &amp; Resultados</h2><p>Números reais de cada canal</p></div><button class="btn-save" onclick="saveAll()">Salvar</button></div>
+      <div class="ph"><div><h2>Métricas &amp; Resultados</h2><p>Números reais de cada canal</p></div><div style="display:flex;gap:8px"><button class="btn-save" style="background:#1A6B55" onclick="exportExcel()">📊 Exportar Excel</button><button class="btn-save" onclick="saveAll()">Salvar</button></div></div>
       <div class="sdiv"><h3>Tráfego pago</h3></div>
       <div class="fg c3">
         <div class="fld"><label>Período</label><input type="text" id="mt_periodo" placeholder="Ex: Maio/2025"></div>
@@ -460,6 +461,114 @@ async function toggleRole(uid,cur){await sb.from('profiles').update({role:cur===
 async function deleteUser(uid,nome){if(!confirm(`Remover acesso de "${nome}"?`))return;await sb.from('profiles').delete().eq('id',uid);showToast(`${nome} removido.`);loadUsers();}
 function renderPreview(){collect();const d=D,fv=(v,fb='—')=>v||fb,n=v=>v?parseInt(v).toLocaleString('pt-BR'):'—',mn=v=>v?`R$ ${parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2})}`:'—';document.getElementById('preview-content').innerHTML=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px"><div class="pvs"><div><div class="pvl">Leads/mês</div><div class="pvv" style="color:var(--a1)">${n(d.kpis.leads)}</div></div></div><div class="pvs"><div><div class="pvl">Seguidores</div><div class="pvv" style="color:var(--a3)">${n(d.kpis.seguidores)}</div></div></div><div class="pvs"><div><div class="pvl">CPL</div><div class="pvv" style="color:var(--a4)">${mn(d.kpis.cpl)}</div></div></div><div class="pvs"><div><div class="pvl">Budget/mês</div><div class="pvv" style="color:var(--a2)">${mn(d.kpis.budget)}</div></div></div></div><div class="block"><div class="bt" style="margin-bottom:8px">MKL — ${fv(d.mkl)}</div><div class="bt">SKL — ${fv(d.skl)}</div></div><div class="block" style="margin-top:12px"><div class="bt" style="margin-bottom:12px">Canais (${d.canais.length})</div>${d.canais.map(c=>`<div style="display:flex;gap:12px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="flex:1;font-weight:500">${c.nome}</span><span style="color:var(--muted)">${c.tipo}</span></div>`).join('')}</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">${['curto','medio','longo'].map((p,i)=>`<div class="block"><div class="bt" style="margin-bottom:10px">${['⏱ Curto','📈 Médio','🚀 Longo'][i]} prazo</div>${(d.prazos[p]||[]).map(o=>`<div style="font-size:12px;color:var(--muted);padding:3px 0">→ ${o}</div>`).join('')}</div>`).join('')}</div>`;}
 function exportDashboard(){collect();const d=D,n=v=>v?parseInt(v).toLocaleString('pt-BR'):'—',mn=v=>v?`R$ ${parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2})}`:'—',fv=(v,fb='—')=>v||fb;const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Dashboard Marketing Competi</title><link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"><style>:root{--bg:#0D0F14;--s:#141720;--s2:#1C2030;--b:rgba(255,255,255,.07);--t:#F0EEE8;--m:#7A7D8A;--a1:#00C884;--a2:#FF6B6B;--a3:#F4C842;--a4:#9B8EFF;--a5:#FF9E5C;}*{box-sizing:border-box;margin:0;padding:0;}body{background:var(--bg);color:var(--t);font-family:'DM Sans',sans-serif;font-size:14px;padding:32px 28px 48px;line-height:1.5;}.h1{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;letter-spacing:-.5px;margin-bottom:4px;}.sub{color:var(--m);font-size:13px;font-weight:300;}.badge{background:rgba(0,200,132,.12);color:var(--a1);font-size:11px;font-weight:500;padding:4px 10px;border-radius:20px;border:1px solid rgba(0,200,132,.2);display:inline-block;margin-top:8px;margin-bottom:32px;}.g{display:grid;gap:16px;}.g4{grid-template-columns:repeat(4,1fr);}.g2{grid-template-columns:1fr 1fr;}.g3{grid-template-columns:1fr 1fr 1fr;}.g12{grid-template-columns:2fr 1fr;}.card{background:var(--s);border:1px solid var(--b);border-radius:16px;padding:20px 22px;}.lbl{font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--m);margin-bottom:14px;}.kpi{background:var(--s);border:1px solid var(--b);border-radius:16px;padding:18px 20px;}.kv{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1;margin-top:2px;}.ks{font-size:12px;color:var(--m);font-weight:300;}.sl{font-size:10px;letter-spacing:1.5px;font-weight:600;text-transform:uppercase;color:var(--m);margin:24px 0 12px;display:flex;align-items:center;gap:10px;}.sl::after{content:'';flex:1;height:1px;background:var(--b);}.fr{display:flex;align-items:center;margin-bottom:10px;}.fl{width:90px;font-size:12px;color:var(--m);flex-shrink:0;}.fw{flex:1;background:var(--s2);border-radius:6px;height:32px;overflow:hidden;}.fb{height:100%;border-radius:6px;display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:500;}.fd{font-size:11px;color:var(--m);margin-left:10px;width:160px;flex-shrink:0;}.ci{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b);}.ci:last-child{border-bottom:none;}.cd{width:8px;height:8px;border-radius:50%;flex-shrink:0;}.cn{font-size:13px;font-weight:500;flex:1;}.cb{font-size:10px;padding:3px 8px;border-radius:12px;font-weight:500;}.pi{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--m);font-weight:300;line-height:1.4;margin-bottom:6px;}.pi::before{content:'→';color:var(--a1);font-size:11px;flex-shrink:0;margin-top:1px;}.tb{background:var(--s2);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;}.ti{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:rgba(0,200,132,.1);}.tn{font-size:13px;font-weight:600;margin-bottom:2px;}.td{font-size:11px;color:var(--m);font-weight:300;line-height:1.4;}.si{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid var(--b);}.si:last-child{border-bottom:none;}.sn{width:24px;height:24px;border-radius:8px;background:rgba(0,200,132,.12);color:var(--a1);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}.lb{background:var(--s2);border-radius:12px;padding:14px 16px;margin-top:10px;}.lt{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;}.ld{font-size:12px;color:var(--m);font-weight:300;line-height:1.5;}</style></head><body><div class="h1">Estratégia de Marketing — Competi</div><div class="sub">Exportado em ${new Date().toLocaleDateString('pt-BR')}</div><div class="badge">⬤ ${d.status}</div><div class="sl">Metas</div><div class="g g4"><div class="kpi" style="border-top:2px solid var(--a1)"><div class="ks">Leads/mês</div><div class="kv" style="color:var(--a1)">${n(d.kpis.leads)}</div></div><div class="kpi" style="border-top:2px solid var(--a3)"><div class="ks">Seguidores</div><div class="kv" style="color:var(--a3)">${n(d.kpis.seguidores)}</div></div><div class="kpi" style="border-top:2px solid var(--a4)"><div class="ks">CPL</div><div class="kv" style="color:var(--a4)">${mn(d.kpis.cpl)}</div></div><div class="kpi" style="border-top:2px solid var(--a2)"><div class="ks">Budget/mês</div><div class="kv" style="color:var(--a2)">${mn(d.kpis.budget)}</div></div></div><div class="sl">Funil</div><div class="g g12"><div class="card" style="border-top:2px solid var(--a1)"><div class="lbl">Funil de vendas</div><div class="fr"><div class="fl">Topo</div><div class="fw"><div class="fb" style="width:100%;background:rgba(0,200,132,.2);color:var(--a1)">${fv(d.funil.topo.canais,'Atração')}</div></div><div class="fd">${fv(d.funil.topo.obj,'Máximo alcance')}</div></div><div class="fr"><div class="fl">Meio</div><div class="fw"><div class="fb" style="width:68%;background:rgba(155,142,255,.2);color:var(--a4)">${fv(d.funil.meio.canais,'Engajamento')}</div></div><div class="fd">${fv(d.funil.meio.obj,'Nurir e qualificar')}</div></div><div class="fr"><div class="fl">Fundo</div><div class="fw"><div class="fb" style="width:38%;background:rgba(244,200,66,.2);color:var(--a3)">${fv(d.funil.fundo.canais,'Conversão')}</div></div><div class="fd">${fv(d.funil.fundo.obj,'MKL → SKL')}</div></div><div class="lb"><div class="lt" style="color:var(--a4)">MKL</div><div class="ld">${fv(d.mkl,'—')}</div></div><div class="lb"><div class="lt" style="color:var(--a1)">SKL</div><div class="ld">${fv(d.skl,'—')}</div></div></div><div class="card" style="border-top:2px solid var(--a4)"><div class="lbl">Canais</div>${d.canais.map((c,i)=>{const cs=['var(--a1)','var(--a3)','var(--a4)','var(--a2)','var(--a5)'],bg=['rgba(0,200,132,.12)','rgba(244,200,66,.12)','rgba(155,142,255,.12)','rgba(255,107,107,.12)','rgba(255,158,92,.12)'];return `<div class="ci"><div class="cd" style="background:${cs[i%5]}"></div><div class="cn">${c.nome}</div><div class="cb" style="background:${bg[i%5]};color:${cs[i%5]}">${c.tipo}</div></div>`;}).join('')}</div></div><div class="sl">Objetivos</div><div class="g g3"><div class="card" style="border-top:2px solid var(--m)"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--m);margin-bottom:12px">⏱ Curto prazo</div>${(d.prazos.curto||[]).map(o=>`<div class="pi">${o}</div>`).join('')}</div><div class="card" style="border-top:2px solid var(--a1)"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--a1);margin-bottom:12px">📈 Médio prazo</div>${(d.prazos.medio||[]).map(o=>`<div class="pi">${o}</div>`).join('')}</div><div class="card" style="border-top:2px solid var(--a3)"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--a3);margin-bottom:12px">🚀 Longo prazo</div>${(d.prazos.longo||[]).map(o=>`<div class="pi">${o}</div>`).join('')}</div></div><div class="sl">Equipe</div><div class="g g2"><div class="card" style="border-top:2px solid var(--a5)"><div class="lbl">Equipe</div>${d.equipe.map(m=>`<div class="tb"><div class="ti">${m.emoji}</div><div><div class="tn">${m.nome}</div><div class="td">${m.papel}</div></div></div>`).join('')}</div><div class="card" style="border-top:2px solid var(--a1)"><div class="lbl">Próximos passos</div>${d.passos.map((p,i)=>`<div class="si"><div class="sn">${i+1}</div><div><div style="font-weight:500;font-size:13px">${p.titulo}</div><div style="color:var(--m);font-size:12px">${p.desc}</div></div></div>`).join('')}</div></div></body></html>`;const blob=new Blob([html],{type:'text/html'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='dashboard_marketing_competi.html';a.click();URL.revokeObjectURL(url);showToast('Dashboard exportado!');}
+function exportExcel(){
+  collect();
+  const m=D.met||{};
+  const t=m.trafego||{}, ig=m.ig||{}, bl=m.blog||{}, em=m.email||{}, vi=m.video||{};
+  const wb=XLSX.utils.book_new();
+
+  // Sheet 1: Tráfego Pago
+  const wsTrafego=XLSX.utils.aoa_to_sheet([
+    ['TRÁFEGO PAGO',''],
+    ['Período',t.periodo||''],
+    ['Investimento (R$)',t.invest||''],
+    ['Leads gerados',t.leads||''],
+    ['CPL real (R$)',t.cpl||''],
+    ['Impressões',t.impressoes||''],
+    ['Cliques',t.cliques||''],
+    ['CTR (%)',t.ctr||''],
+    ['Taxa de conversão (%)',t.conv||''],
+    ['Plataforma',t.plataforma||''],
+  ]);
+  wsTrafego['!cols']=[{wch:30},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,wsTrafego,'Tráfego Pago');
+
+  // Sheet 2: Instagram
+  const wsIG=XLSX.utils.aoa_to_sheet([
+    ['INSTAGRAM',''],
+    ['Período',ig.periodo||''],
+    ['Seguidores (total)',ig.seg||''],
+    ['Seguidores novos',ig.novos||''],
+    ['Alcance médio por post',ig.alcance||''],
+    ['Impressões totais',ig.impressoes||''],
+    ['Engajamento (%)',ig.eng||''],
+    ['Posts publicados',ig.posts||''],
+    ['Reels publicados',ig.reels||''],
+    ['Cliques no link da bio',ig.bio||''],
+  ]);
+  wsIG['!cols']=[{wch:30},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,wsIG,'Instagram');
+
+  // Sheet 3: Blog / SEO
+  const wsBlog=XLSX.utils.aoa_to_sheet([
+    ['BLOG / SEO',''],
+    ['Período',bl.periodo||''],
+    ['Visitas únicas',bl.visitas||''],
+    ['Pageviews',bl.pageviews||''],
+    ['Artigos publicados',bl.artigos||''],
+    ['Tempo médio na página (seg)',bl.tempo||''],
+    ['Taxa de rejeição (%)',bl.rejeicao||''],
+  ]);
+  wsBlog['!cols']=[{wch:30},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,wsBlog,'Blog SEO');
+
+  // Sheet 4: E-mail Marketing
+  const wsEmail=XLSX.utils.aoa_to_sheet([
+    ['E-MAIL MARKETING',''],
+    ['Período',em.periodo||''],
+    ['E-mails enviados',em.enviados||''],
+    ['Taxa de abertura (%)',em.abertura||''],
+    ['Taxa de clique (%)',em.clique||''],
+    ['Descadastros',em.desc||''],
+    ['Tamanho da base',em.base||''],
+  ]);
+  wsEmail['!cols']=[{wch:30},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,wsEmail,'E-mail Marketing');
+
+  // Sheet 5: TikTok & Shorts
+  const wsVideo=XLSX.utils.aoa_to_sheet([
+    ['TIKTOK & YOUTUBE SHORTS',''],
+    ['Período',vi.periodo||''],
+    ['TikTok — Seguidores',vi.tt_seg||''],
+    ['TikTok — Visualizações',vi.tt_views||''],
+    ['Shorts — Inscritos',vi.yt_inscritos||''],
+    ['Shorts — Visualizações',vi.yt_views||''],
+    ['Vídeos publicados (total)',vi.total||''],
+  ]);
+  wsVideo['!cols']=[{wch:30},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,wsVideo,'TikTok e Shorts');
+
+  // Sheet 6: Resumo geral
+  const wsResumo=XLSX.utils.aoa_to_sheet([
+    ['RESUMO GERAL DE MÉTRICAS',''],
+    ['Gerado em', new Date().toLocaleDateString('pt-BR')],
+    [''],
+    ['CANAL','MÉTRICA PRINCIPAL','VALOR'],
+    ['Tráfego Pago','Leads gerados',t.leads||'—'],
+    ['Tráfego Pago','CPL real (R$)',t.cpl||'—'],
+    ['Tráfego Pago','Investimento (R$)',t.invest||'—'],
+    ['Instagram','Seguidores total',ig.seg||'—'],
+    ['Instagram','Seguidores novos',ig.novos||'—'],
+    ['Instagram','Engajamento (%)',ig.eng||'—'],
+    ['Blog / SEO','Visitas únicas',bl.visitas||'—'],
+    ['Blog / SEO','Artigos publicados',bl.artigos||'—'],
+    ['E-mail','E-mails enviados',em.enviados||'—'],
+    ['E-mail','Taxa de abertura (%)',em.abertura||'—'],
+    ['TikTok','Seguidores',vi.tt_seg||'—'],
+    ['YouTube Shorts','Inscritos',vi.yt_inscritos||'—'],
+    [''],
+    ['OBSERVAÇÕES',''],
+    [m.obs||''],
+  ]);
+  wsResumo['!cols']=[{wch:25},{wch:30},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,wsResumo,'Resumo');
+
+  // Download
+  const periodo = t.periodo || new Date().toLocaleDateString('pt-BR').replace(/\//g,'-');
+  XLSX.writeFile(wb, `metricas_competi_${periodo}.xlsx`);
+  showToast('Planilha Excel exportada!');
+}
+
 function showToast(msg,err=false){const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;t.classList.toggle('err',err);t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 (async()=>{const{data:{session}}=await sb.auth.getSession();if(session?.user)await bootApp(session.user);document.getElementById('lin-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});})();
 </script>
