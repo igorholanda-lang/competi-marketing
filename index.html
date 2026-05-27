@@ -845,10 +845,11 @@ async function enviarEmail() {
   feedback.textContent = 'Enviando...';
   document.getElementById('btn-enviar').disabled = true;
 
-  // Build RFC 2822 email
-  let headers = `To: ${para}\r\nSubject: ${assunto}\r\nContent-Type: text/plain; charset=UTF-8\r\n`;
+  // Build RFC 2822 email with proper UTF-8 encoding
+  let headers = `To: ${para}\r\nSubject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(assunto)))}?=\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n`;
   if (cc) headers += `Cc: ${cc}\r\n`;
-  const raw = btoa(unescape(encodeURIComponent(headers + '\r\n' + corpo)))
+  const encodedBody = btoa(unescape(encodeURIComponent(corpo)));
+  const raw = btoa(unescape(encodeURIComponent(headers + '\r\n' + encodedBody)))
     .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 
   try {
