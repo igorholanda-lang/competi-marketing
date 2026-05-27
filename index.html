@@ -138,6 +138,7 @@ textarea{resize:vertical;min-height:80px;}
     <div class="nsep"></div>
     <button class="nav-item" data-page="email_bv" onclick="goTo('email_bv')"><span class="nicon">💌</span> E-mail Boas-vindas</button>
     <button class="nav-item" data-page="email_base" onclick="goTo('email_base')"><span class="nicon">📨</span> E-mail Base</button>
+    <button class="nav-item" data-page="enviar_email" onclick="goTo('enviar_email')"><span class="nicon">✉️</span> Enviar E-mail</button>
     <button class="nav-item" data-page="ig_lista" onclick="goTo('ig_lista')"><span class="nicon">📋</span> Lista Instagram</button>
     <button class="nav-item" data-page="video" onclick="goTo('video')"><span class="nicon">🎬</span> TikTok &amp; Shorts</button>
     <button class="nav-item" data-page="eventos" onclick="goTo('eventos')"><span class="nicon">🎙️</span> Eventos</button>
@@ -437,6 +438,65 @@ textarea{resize:vertical;min-height:80px;}
       </div>
     </div>
 
+    <!-- ENVIAR E-MAIL -->
+    <div class="page" id="page-enviar_email">
+      <div class="ph"><div><h2>✉️ Enviar E-mail</h2><p>Conecte sua conta Google e envie e-mails direto pelo dashboard</p></div>
+        <button class="btn-save" id="btn-gmail-connect" onclick="connectGmail()" style="background:#DB4437">🔗 Conectar Gmail</button>
+      </div>
+
+      <!-- STATUS DA CONEXÃO -->
+      <div class="block" style="margin-bottom:20px" id="gmail-status-block">
+        <div class="bh"><div class="bt">📡 Status da conexão</div></div>
+        <div id="gmail-status" style="font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px">
+          <span>⚪</span> Não conectado — clique em "Conectar Gmail" para autorizar
+        </div>
+      </div>
+
+      <!-- TEMPLATES RÁPIDOS -->
+      <div class="block" style="margin-bottom:20px">
+        <div class="bh"><div class="bt">⚡ Templates rápidos</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-sm" onclick="loadTemplate('bv')">💌 Boas-vindas</button>
+          <button class="btn-sm" onclick="loadTemplate('conteudo')">📨 Conteúdo para base</button>
+          <button class="btn-sm" onclick="loadTemplate('evento')">🎙️ Divulgação de evento</button>
+          <button class="btn-sm" onclick="loadTemplate('vazio')">✏️ Em branco</button>
+        </div>
+      </div>
+
+      <!-- COMPOSER -->
+      <div class="block">
+        <div class="bh"><div class="bt">📝 Compor e-mail</div></div>
+        <div class="fg c1">
+          <div class="fld">
+            <label>Para (destinatário)</label>
+            <input type="email" id="email-para" placeholder="cliente@email.com">
+          </div>
+          <div class="fld">
+            <label>CC (com cópia) — opcional</label>
+            <input type="email" id="email-cc" placeholder="outro@email.com">
+          </div>
+          <div class="fld">
+            <label>Assunto</label>
+            <input type="text" id="email-assunto" placeholder="Ex: Bem-vindo(a) à Competi!">
+          </div>
+          <div class="fld">
+            <label>Mensagem</label>
+            <textarea id="email-corpo" style="min-height:200px" placeholder="Digite sua mensagem aqui..."></textarea>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+            <button class="btn-save" onclick="enviarEmail()" id="btn-enviar" disabled style="opacity:.4">📤 Enviar e-mail</button>
+            <div id="email-feedback" style="font-size:13px;color:var(--muted)"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTÓRICO -->
+      <div class="sdiv"><h3>📋 Últimos e-mails enviados</h3></div>
+      <div id="email-historico">
+        <div style="color:var(--muted);font-size:13px;padding:8px 0">Nenhum e-mail enviado ainda nesta sessão.</div>
+      </div>
+    </div>
+
     <!-- PREVIEW -->
     <div class="page" id="page-preview">
       <div class="ph"><div><h2>Visualizar dados</h2></div><button class="btn-save" onclick="exportDashboard()">⬇ Exportar</button></div>
@@ -476,7 +536,7 @@ async function loadData(){const{data:row}=await sb.from('marketing_data').select
 async function saveAll(){if(ROLE!=='admin'){showToast('Sem permissão para editar.',true);return;}collect();const{error}=await sb.from('marketing_data').upsert({id:1,content:D,updated_at:new Date().toISOString()});if(error){showToast('Erro: '+error.message,true);return;}showToast('Dados salvos com sucesso!');}
 function g(id){const e=document.getElementById(id);return e?e.value:'';}
 function collect(){['leads','seguidores','cpl','visitas','budget','data'].forEach(k=>{const e=document.getElementById('kpi_'+k);if(e)D.kpis[k]=e.value;});D.mkl=g('mkl_desc');D.skl=g('skl_desc');['topo','meio','fundo'].forEach(e=>['canais','obj','desc'].forEach(f=>{const el=document.getElementById(`f_${e}_${f}`);if(el)D.funil[e][f]=el.value;}));D.canais=[];document.querySelectorAll('.crow-d').forEach(r=>D.canais.push({nome:r.querySelector('.c-n').value,tipo:r.querySelector('.c-t').value,status:r.querySelector('.c-s').value}));['curto','medio','longo'].forEach(p=>{D.prazos[p]=[];document.querySelectorAll(`.pi-${p}`).forEach(el=>{if(el.value.trim())D.prazos[p].push(el.value.trim());});});D.equipe=[];document.querySelectorAll('.tr-d').forEach(r=>D.equipe.push({nome:r.querySelector('.t-n').value,papel:r.querySelector('.t-p').value,emoji:r.querySelector('.t-e').value||'👤'}));D.passos=[];document.querySelectorAll('.pas-d').forEach(r=>D.passos.push({titulo:r.querySelector('.ps-t').value,desc:r.querySelector('.ps-d').value}));D.ebv={};['assunto','remetente','tom','gatilho','abertura','corpo','cta','assinatura','links','obs'].forEach(k=>D.ebv[k]=g('ebv_'+k));if(!D.ebase)D.ebase={};['freq','seg','obj','tool','obs'].forEach(k=>D.ebase[k]=g('eb_'+k));D.ebase.conteudos=[];document.querySelectorAll('.eb-ci').forEach(el=>{if(el.value.trim())D.ebase.conteudos.push(el.value.trim());});D.ig_lista=[];document.querySelectorAll('.ig-rd').forEach(r=>D.ig_lista.push({nome:r.querySelector('.ig-n').value,arroba:r.querySelector('.ig-a').value,seg:r.querySelector('.ig-s').value,status:r.querySelector('.ig-st').value}));D.ig_est=g('ig_est');D.ig_sr=g('ig_sr');if(!D.video)D.video={};['tt','yt'].forEach(ch=>{D.video[ch]={};['status','freq','conteudo','metricas','prazo'].forEach(k=>D.video[ch][k]=g(`${ch}_${k}`));});D.video.reap=g('vc_reap');D.video.infl=g('vc_infl');D.video.esc=g('vc_esc');D.video.paus=g('vc_paus');D.produtos=[];document.querySelectorAll('.prod-d').forEach(r=>D.produtos.push({nome:r.querySelector('.pd-n').value,descricao:r.querySelector('.pd-desc').value,preco:r.querySelector('.pd-p').value,status:r.querySelector('.pd-s').value}));if(!D.met)D.met={};D.met.trafego={periodo:g('mt_periodo'),invest:g('mt_invest'),leads:g('mt_leads'),cpl:g('mt_cpl'),impressoes:g('mt_impressoes'),cliques:g('mt_cliques'),ctr:g('mt_ctr'),conv:g('mt_conv'),plataforma:g('mt_plataforma')};D.met.ig={periodo:g('mi_periodo'),seg:g('mi_seg'),novos:g('mi_novos'),alcance:g('mi_alcance'),impressoes:g('mi_impressoes'),eng:g('mi_eng'),posts:g('mi_posts'),reels:g('mi_reels'),bio:g('mi_bio')};D.met.blog={periodo:g('mb_periodo'),visitas:g('mb_visitas'),pageviews:g('mb_pageviews'),artigos:g('mb_artigos'),tempo:g('mb_tempo'),rejeicao:g('mb_rejeicao')};D.met.email={periodo:g('me_periodo'),enviados:g('me_enviados'),abertura:g('me_abertura'),clique:g('me_clique'),desc:g('me_desc'),base:g('me_base')};D.met.video={periodo:g('mv_periodo'),tt_seg:g('mv_tt_seg'),tt_views:g('mv_tt_views'),yt_inscritos:g('mv_yt_inscritos'),yt_views:g('mv_yt_views'),total:g('mv_total')};D.met.obs=g('met_obs');if(!D.eventos)D.eventos={};D.eventos.rt={pos:g('ev_rt_pos'),cont:g('ev_rt_cont'),canais:g('ev_rt_canais'),parc:g('ev_rt_parc'),cal:g('ev_rt_cal')};D.eventos.lista=[];document.querySelectorAll('.ev-rd').forEach(r=>D.eventos.lista.push({nome:r.querySelector('.ev-n').value,data:r.querySelector('.ev-d').value,formato:r.querySelector('.ev-f').value,resp:r.querySelector('.ev-r').value,status:r.querySelector('.ev-s').value}));D.eventos.div=g('ev_div');if(!D.podcast)D.podcast={};['nome','slogan','tema','publico','formato','freq','duracao','grav','edicao','plat','status','cc','cq','cr','cres'].forEach(k=>D.podcast[k]=g('pod_'+k));D.podcast.episodios=[];document.querySelectorAll('.ep-rd').forEach(r=>D.podcast.episodios.push({titulo:r.querySelector('.ep-t').value,convidado:r.querySelector('.ep-c').value,data:r.querySelector('.ep-d').value,status:r.querySelector('.ep-s').value}));if(!D.endo)D.endo={};D.endo.assin={status:g('ea_status'),resp:g('ea_resp'),elem:g('ea_elem'),tool:g('ea_tool'),obs:g('ea_obs')};D.endo.foto={status:g('ef_status'),resp:g('ef_resp'),padrao:g('ef_padrao'),qtd:g('ef_qtd')};D.endo.datas=[];document.querySelectorAll('.ed-rd').forEach(r=>D.endo.datas.push({evento:r.querySelector('.ed-ev').value,mes:r.querySelector('.ed-m').value,acao:r.querySelector('.ed-a').value,status:r.querySelector('.ed-s').value}));D.endo.outras=g('endo_outras');if(!D.cursos)D.cursos={};['alura_email','alura_plano','alura_venc','alura_and'].forEach(k=>D.cursos[k]=g(k));D.cursos.outras=g('cursos_outras');D.cursos.certs=[];document.querySelectorAll('.cert-rd').forEach(r=>D.cursos.certs.push({nome:r.querySelector('.ct-n').value,plat:r.querySelector('.ct-p').value,data:r.querySelector('.ct-d').value,url:r.querySelector('.ct-u').value}));D.cursos.interesse=[];document.querySelectorAll('.ci-rd').forEach(r=>D.cursos.interesse.push({nome:r.querySelector('.ci-n').value,plat:r.querySelector('.ci-p').value,prio:r.querySelector('.ci-pr').value}));}
-function goTo(page){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));const pg=document.getElementById('page-'+page);if(pg)pg.classList.add('active');const nb=document.querySelector(`.nav-item[data-page="${page}"]`);if(nb)nb.classList.add('active');if(page==='preview')renderPreview();if(page==='usuarios')loadUsers();if(page==='documentos')loadDocumentos();}
+function goTo(page){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));const pg=document.getElementById('page-'+page);if(pg)pg.classList.add('active');const nb=document.querySelector(`.nav-item[data-page="${page}"]`);if(nb)nb.classList.add('active');if(page==='preview')renderPreview();if(page==='usuarios')loadUsers();if(page==='documentos')loadDocumentos();if(page==='enviar_email')updateGmailStatus();}
 function init(){['leads','seguidores','cpl','visitas','budget','data'].forEach(k=>{const e=document.getElementById('kpi_'+k);if(e)e.value=D.kpis[k]||'';});const m=document.getElementById('mkl_desc');if(m)m.value=D.mkl||'';const s=document.getElementById('skl_desc');if(s)s.value=D.skl||'';document.querySelectorAll('.sopt').forEach(o=>o.classList.toggle('selected',o.textContent.trim().includes(D.status)));['topo','meio','fundo'].forEach(e=>['canais','obj','desc'].forEach(f=>{const el=document.getElementById(`f_${e}_${f}`);if(el)el.value=D.funil[e][f]||'';}));renderCanais();['curto','medio','longo'].forEach(p=>renderPrazos(p));renderEquipe();renderPassos();const ebv=D.ebv||{};['assunto','remetente','tom','gatilho','abertura','corpo','cta','assinatura','links','obs'].forEach(k=>{const e=document.getElementById('ebv_'+k);if(e)e.value=ebv[k]||'';});const eb=D.ebase||{};['freq','seg','obj','tool','obs'].forEach(k=>{const e=document.getElementById('eb_'+k);if(e)e.value=eb[k]||'';});renderEbaseConteudos();renderIgLista();const ig1=document.getElementById('ig_est');if(ig1)ig1.value=D.ig_est||'';const ig2=document.getElementById('ig_sr');if(ig2)ig2.value=D.ig_sr||'';const v=D.video||{};['tt','yt'].forEach(ch=>{const c=v[ch]||{};['status','freq','conteudo','metricas','prazo'].forEach(k=>{const e=document.getElementById(`${ch}_${k}`);if(e)e.value=c[k]||'';});});[['reap','vc_reap'],['infl','vc_infl'],['esc','vc_esc'],['paus','vc_paus']].forEach(([k,id])=>{const e=document.getElementById(id);if(e)e.value=v[k]||'';});renderProdutos();const mt=D.met?.trafego||{};['periodo','invest','leads','cpl','impressoes','cliques','ctr','conv','plataforma'].forEach(k=>{const e=document.getElementById('mt_'+k);if(e)e.value=mt[k]||'';});const mi=D.met?.ig||{};['periodo','seg','novos','alcance','impressoes','eng','posts','reels','bio'].forEach(k=>{const e=document.getElementById('mi_'+k);if(e)e.value=mi[k]||'';});const mb=D.met?.blog||{};['periodo','visitas','pageviews','artigos','tempo','rejeicao'].forEach(k=>{const e=document.getElementById('mb_'+k);if(e)e.value=mb[k]||'';});const me=D.met?.email||{};['periodo','enviados','abertura','clique','desc','base'].forEach(k=>{const e=document.getElementById('me_'+k);if(e)e.value=me[k]||'';});const mv=D.met?.video||{};['periodo','tt_seg','tt_views','yt_inscritos','yt_views','total'].forEach(k=>{const e=document.getElementById('mv_'+k);if(e)e.value=mv[k]||'';});const mo=document.getElementById('met_obs');if(mo)mo.value=D.met?.obs||'';const ev=D.eventos||{};['pos','cont','canais','parc','cal'].forEach(k=>{const e=document.getElementById('ev_rt_'+k);if(e)e.value=(ev.rt||{})[k]||'';});renderEventosList();const evd=document.getElementById('ev_div');if(evd)evd.value=ev.div||'';const pod=D.podcast||{};['nome','slogan','tema','publico','formato','freq','duracao','grav','edicao','plat','status','cc','cq','cr','cres'].forEach(k=>{const e=document.getElementById('pod_'+k);if(e)e.value=pod[k]||'';});renderEpisodios();const en=D.endo||{};const ea=en.assin||{};['status','resp','elem','tool','obs'].forEach(k=>{const e=document.getElementById('ea_'+k);if(e)e.value=ea[k]||'';});const ef=en.foto||{};['status','resp','padrao','qtd'].forEach(k=>{const e=document.getElementById('ef_'+k);if(e)e.value=ef[k]||'';});renderEndoDatas();const eo=document.getElementById('endo_outras');if(eo)eo.value=en.outras||'';const cu=D.cursos||{};['alura_email','alura_plano','alura_venc','alura_and'].forEach(k=>{const e=document.getElementById(k);if(e)e.value=cu[k]||'';});const co=document.getElementById('cursos_outras');if(co)co.value=cu.outras||'';renderCertificados();renderCursosInteresse();}
 function selStatus(el,val){if(ROLE!=='admin')return;document.querySelectorAll('.sopt').forEach(o=>o.classList.remove('selected'));el.classList.add('selected');D.status=val;}
 function renderCanais(){const l=document.getElementById('canal-list');l.innerHTML='';D.canais.forEach((c,i)=>{const r=document.createElement('div');r.className='crow crow-d';r.style.cssText='display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:end;margin-bottom:8px';r.innerHTML=`<div class="fld">${i===0?'<label>Canal</label>':''}<input type="text" class="c-n" value="${c.nome}" placeholder="Ex: Instagram"></div><div class="fld">${i===0?'<label>Tipo</label>':''}<input type="text" class="c-t" value="${c.tipo}" placeholder="Orgânico + Pago"></div><div class="fld">${i===0?'<label>Status</label>':''}<select class="c-s"><option ${c.status==='Ativo'?'selected':''}>Ativo</option><option ${c.status==='Planejado'?'selected':''}>Planejado</option><option ${c.status==='A contratar'?'selected':''}>A contratar</option><option ${c.status==='Pausado'?'selected':''}>Pausado</option></select></div><button class="btn-rm" onclick="removeCanal(${i})" style="margin-top:${i===0?'22':'0'}px">✕</button>`;l.appendChild(r);});}
@@ -724,8 +784,144 @@ async function deleteDoc(path, cat) {
   loadDocumentos();
 }
 
+// ══════════════════════════════════════════
+//  GMAIL INTEGRATION
+// ══════════════════════════════════════════
+const GMAIL_CLIENT_ID = '1025475705432-raubfku3snh50bf2pi6rhg1hidvkr67g.apps.googleusercontent.com';
+const GMAIL_SCOPES = 'https://www.googleapis.com/auth/gmail.send';
+let gmailToken = null;
+
+function connectGmail() {
+  const params = new URLSearchParams({
+    client_id: GMAIL_CLIENT_ID,
+    redirect_uri: window.location.origin + window.location.pathname,
+    response_type: 'token',
+    scope: GMAIL_SCOPES,
+    prompt: 'consent'
+  });
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
+}
+
+function checkGmailToken() {
+  // Check URL hash for token after OAuth redirect
+  const hash = window.location.hash.substring(1);
+  const params = new URLSearchParams(hash);
+  const token = params.get('access_token');
+  if (token) {
+    gmailToken = token;
+    sessionStorage.setItem('gmail_token', token);
+    // Clean URL
+    history.replaceState(null, '', window.location.pathname);
+  } else {
+    gmailToken = sessionStorage.getItem('gmail_token');
+  }
+  updateGmailStatus();
+}
+
+function updateGmailStatus() {
+  const statusEl = document.getElementById('gmail-status');
+  const btnEnviar = document.getElementById('btn-enviar');
+  const btnConnect = document.getElementById('btn-gmail-connect');
+  if (!statusEl) return;
+  if (gmailToken) {
+    statusEl.innerHTML = '<span>🟢</span> Gmail conectado — pronto para enviar e-mails';
+    if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.style.opacity = '1'; }
+    if (btnConnect) { btnConnect.textContent = '✓ Gmail conectado'; btnConnect.style.background = 'var(--a1)'; }
+  } else {
+    statusEl.innerHTML = '<span>⚪</span> Não conectado — clique em "Conectar Gmail" para autorizar';
+    if (btnEnviar) { btnEnviar.disabled = true; btnEnviar.style.opacity = '.4'; }
+  }
+}
+
+async function enviarEmail() {
+  if (!gmailToken) { showToast('Conecte o Gmail primeiro!', true); return; }
+  const para = document.getElementById('email-para').value.trim();
+  const cc = document.getElementById('email-cc').value.trim();
+  const assunto = document.getElementById('email-assunto').value.trim();
+  const corpo = document.getElementById('email-corpo').value.trim();
+  if (!para || !assunto || !corpo) { showToast('Preencha destinatário, assunto e mensagem.', true); return; }
+
+  const feedback = document.getElementById('email-feedback');
+  feedback.textContent = 'Enviando...';
+  document.getElementById('btn-enviar').disabled = true;
+
+  // Build RFC 2822 email
+  let headers = `To: ${para}\r\nSubject: ${assunto}\r\nContent-Type: text/plain; charset=UTF-8\r\n`;
+  if (cc) headers += `Cc: ${cc}\r\n`;
+  const raw = btoa(unescape(encodeURIComponent(headers + '\r\n' + corpo)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+
+  try {
+    const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + gmailToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw })
+    });
+    if (res.ok) {
+      showToast('E-mail enviado com sucesso!');
+      feedback.textContent = '';
+      addHistorico(para, assunto);
+      document.getElementById('email-para').value = '';
+      document.getElementById('email-cc').value = '';
+      document.getElementById('email-assunto').value = '';
+      document.getElementById('email-corpo').value = '';
+    } else {
+      const err = await res.json();
+      if (err.error?.code === 401) {
+        gmailToken = null; sessionStorage.removeItem('gmail_token');
+        updateGmailStatus();
+        showToast('Sessão expirada. Reconecte o Gmail.', true);
+      } else {
+        showToast('Erro ao enviar: ' + (err.error?.message || 'tente novamente'), true);
+      }
+      feedback.textContent = '';
+    }
+  } catch(e) {
+    showToast('Erro de conexão.', true);
+    feedback.textContent = '';
+  }
+  document.getElementById('btn-enviar').disabled = false;
+}
+
+function addHistorico(para, assunto) {
+  const hist = document.getElementById('email-historico');
+  const agora = new Date().toLocaleString('pt-BR');
+  const item = document.createElement('div');
+  item.style.cssText = 'display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px';
+  item.innerHTML = `<span style="color:var(--a1);font-size:16px">✓</span><div style="flex:1"><div style="font-weight:500">${assunto}</div><div style="color:var(--muted);font-size:12px">Para: ${para} · ${agora}</div></div>`;
+  if (hist.querySelector('[style*="Nenhum"]')) hist.innerHTML = '';
+  hist.insertBefore(item, hist.firstChild);
+}
+
+function loadTemplate(tipo) {
+  const ebv = D.ebv || {};
+  const templates = {
+    bv: {
+      assunto: ebv.assunto || 'Seja bem-vindo(a) à Competi! 🎉',
+      corpo: `${ebv.abertura || 'Olá!'}\n\n${ebv.corpo || 'É um prazer tê-lo(a) conosco.'}\n\n${ebv.cta || ''}\n\n${ebv.assinatura || 'Equipe Competi'}`
+    },
+    conteudo: {
+      assunto: 'Novidade da Competi para você 📢',
+      corpo: 'Olá!\n\nTemos uma novidade importante para compartilhar com você...\n\nAté mais,\nEquipe Competi'
+    },
+    evento: {
+      assunto: 'Você está convidado(a)! 🎙️',
+      corpo: 'Olá!\n\nGostaríamos de convidá-lo(a) para um evento especial...\n\nAguardamos sua presença!\nEquipe Competi'
+    },
+    vazio: { assunto: '', corpo: '' }
+  };
+  const t = templates[tipo] || templates.vazio;
+  document.getElementById('email-assunto').value = t.assunto;
+  document.getElementById('email-corpo').value = t.corpo;
+}
+
 function showToast(msg,err=false){const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;t.classList.toggle('err',err);t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
-(async()=>{const{data:{session}}=await sb.auth.getSession();if(session?.user)await bootApp(session.user);document.getElementById('lin-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});})();
+(async()=>{
+  checkGmailToken();
+  const{data:{session}}=await sb.auth.getSession();
+  if(session?.user)await bootApp(session.user);
+  document.getElementById('lin-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+})();
 </script>
 </body>
 </html>
