@@ -709,9 +709,15 @@ async function inviteUser(){
   const btnCriar=document.querySelector('#page-usuarios .btn-save');
   if(btnCriar){btnCriar.disabled=true;btnCriar.textContent='Criando...';}
   try{
+    const{data:{session}}=await sb.auth.getSession();
+    const token=session?.access_token||SUPA_KEY;
     const res=await fetch('https://zpiddamqmmllwtswvyza.supabase.co/functions/v1/create-user',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPA_KEY},
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+token,
+        'apikey':SUPA_KEY
+      },
       body:JSON.stringify({email,password:senha,nome,role})
     });
     const result=await res.json();
