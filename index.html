@@ -709,10 +709,13 @@ async function inviteUser(){
   const btnCriar=document.querySelector('#page-usuarios .btn-save');
   if(btnCriar){btnCriar.disabled=true;btnCriar.textContent='Criando...';}
   try{
-    const res=await fetch(`https://zpiddamqmmllwtswvyza.supabase.co/auth/v1/admin/users`,{method:'POST',headers:{'Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwaWRkYW1xbW1sbHd0c3d2eXphIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTE4MjkxOCwiZXhwIjoyMDk0NzU4OTE4fQ.io1cANBXa421CKoi0SIvH25FjxjHX7733zqkYjXWeAg','Content-Type':'application/json','apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwaWRkYW1xbW1sbHd0c3d2eXphIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTE4MjkxOCwiZXhwIjoyMDk0NzU4OTE4fQ.io1cANBXa421CKoi0SIvH25FjxjHX7733zqkYjXWeAg'},body:JSON.stringify({email,password:senha,email_confirm:true})});
-    const created=await res.json();
-    if(!res.ok)throw new Error(created.message||created.msg||'Erro ao criar usuário');
-    await sbAdmin.from('profiles').upsert({id:created.id,nome,role,email});
+    const res=await fetch('https://zpiddamqmmllwtswvyza.supabase.co/functions/v1/create-user',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPA_KEY},
+      body:JSON.stringify({email,password:senha,nome,role})
+    });
+    const result=await res.json();
+    if(!res.ok)throw new Error(result.error||'Erro ao criar usuário');
     showToast(`Usuário ${nome} criado com sucesso!`);
     document.getElementById('inv-nome').value='';
     document.getElementById('inv-email').value='';
