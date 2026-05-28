@@ -161,6 +161,7 @@ textarea{resize:vertical;min-height:80px;}
       <div class="uinfo"><div class="uname" id="nav-nm">—</div><div class="urole" id="nav-rl">—</div></div>
       <button class="btn-logout" onclick="doLogout()" title="Sair">↩</button>
     </div>
+    <button class="nav-item" onclick="document.getElementById('modal-senha').style.display='flex'" style="color:#888;font-size:12px;padding:6px 12px;margin-bottom:4px"><span class="nicon" style="font-size:12px">🔑</span> Trocar minha senha</button>
     <button class="nav-item active" data-page="kpis" onclick="goTo('kpis')"><span class="nicon">📊</span> Metas e KPIs</button>
     <div class="nsep"></div>
     <button class="nav-item" data-page="produtos" onclick="goTo('produtos')"><span class="nicon">🏷️</span> Produtos Competi</button>
@@ -593,9 +594,13 @@ textarea{resize:vertical;min-height:80px;}
         <div class="inv-row">
           <div class="fld"><label>Nome completo</label><input type="text" id="inv-nome" placeholder="Ex: João Silva"></div>
           <div class="fld"><label>E-mail</label><input type="email" id="inv-email" placeholder="joao@competi.com.br"></div>
-          <div class="fld"><label>Senha temporária</label><input type="text" id="inv-senha" placeholder="Mínimo 8 caracteres"></div>
+          <div class="fld"><label>Senha temporária</label><input type="text" id="inv-senha" placeholder="Mínimo 6 caracteres"></div>
           <div class="fld"><label>Nível</label><select id="inv-role"><option value="member">👁️ Membro (só visualiza)</option><option value="admin">✏️ Admin (edita tudo)</option></select></div>
           <div class="fld" style="justify-content:flex-end"><button class="btn-save" onclick="inviteUser()" style="margin-top:22px">Criar</button></div>
+        </div>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="inv-send-email" checked style="width:16px;height:16px;cursor:pointer">
+          <label for="inv-send-email" style="font-size:13px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400;cursor:pointer">📧 Enviar e-mail de boas-vindas com as credenciais de acesso</label>
         </div>
       </div>
       <div class="sdiv"><h3>Usuários cadastrados</h3></div>
@@ -605,6 +610,24 @@ textarea{resize:vertical;min-height:80px;}
 </div>
 </div>
 <div class="toast" id="toast">✓ <span id="toast-msg">Salvo!</span></div>
+
+<!-- MODAL TROCAR SENHA -->
+<div class="modal-overlay" id="modal-senha" style="display:none">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">🔑 Trocar senha</div>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6">Você está usando uma senha temporária. Por segurança, crie uma senha pessoal antes de continuar.</p>
+    <div class="fg c1" style="gap:14px">
+      <div class="fld"><label>Nova senha</label><input type="password" id="nova-senha" placeholder="Mínimo 6 caracteres"></div>
+      <div class="fld"><label>Confirmar nova senha</label><input type="password" id="nova-senha-conf" placeholder="Repita a nova senha"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end">
+      <button class="btn-sm" onclick="document.getElementById('modal-senha').style.display='none'">Depois</button>
+      <button class="btn-save" onclick="trocarSenha()">Salvar nova senha</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL POST -->
 <div class="modal-overlay" id="modal-post" style="display:none" onclick="fecharModalPost(event)">
@@ -705,6 +728,7 @@ async function inviteUser(){
   const email=document.getElementById('inv-email').value.trim();
   const senha=document.getElementById('inv-senha').value;
   const role=document.getElementById('inv-role').value;
+  const sendEmail=document.getElementById('inv-send-email')?.checked;
   if(!nome||!email||senha.length<6){showToast('Preencha nome, e-mail e senha (mín. 6 chars).',true);return;}
   const btnCriar=document.querySelector('#page-usuarios .btn-save');
   if(btnCriar){btnCriar.disabled=true;btnCriar.textContent='Criando...';}
@@ -713,15 +737,32 @@ async function inviteUser(){
     const token=session?.access_token||SUPA_KEY;
     const res=await fetch('https://zpiddamqmmllwtswvyza.supabase.co/functions/v1/create-user',{
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':'Bearer '+token,
-        'apikey':SUPA_KEY
-      },
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token,'apikey':SUPA_KEY},
       body:JSON.stringify({email,password:senha,nome,role})
     });
     const result=await res.json();
     if(!res.ok)throw new Error(result.error||'Erro ao criar usuário');
+
+    // Send welcome email if checked
+    if(sendEmail && gmailToken){
+      const siteUrl='https://igorholanda-lang.github.io/competi-marketing/';
+      const nivelTexto=role==='admin'?'Administrador (pode editar tudo)':'Membro (visualização)';
+      await enviarEmailDireto(
+        email,
+        `Seu acesso ao Dashboard Marketing Competi`,
+        `Olá, ${nome}!\n\nSeu acesso ao Dashboard de Marketing da Competi foi criado.\n\n` +
+        `🔗 Link de acesso: ${siteUrl}\n` +
+        `📧 E-mail: ${email}\n` +
+        `🔑 Senha temporária: ${senha}\n` +
+        `👤 Nível de acesso: ${nivelTexto}\n\n` +
+        `⚠️ Recomendamos que você troque sua senha no primeiro acesso.\n\n` +
+        `Qualquer dúvida, fale com o administrador.\n\n` +
+        `Atenciosamente,\nEquipe Competi`
+      );
+    } else if(sendEmail && !gmailToken){
+      showToast('Usuário criado! Conecte o Gmail para enviar e-mail automático.',false);
+    }
+
     showToast(`Usuário ${nome} criado com sucesso!`);
     document.getElementById('inv-nome').value='';
     document.getElementById('inv-email').value='';
@@ -729,6 +770,33 @@ async function inviteUser(){
     loadUsers();
   }catch(e){showToast('Erro: '+e.message,true);}
   finally{if(btnCriar){btnCriar.disabled=false;btnCriar.textContent='Criar';}}
+}
+
+async function enviarEmailDireto(para, assunto, corpo){
+  if(!gmailToken)return;
+  function toB64(str){return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,(m,p1)=>String.fromCharCode('0x'+p1)));}
+  const subjectEncoded=`=?UTF-8?B?${toB64(assunto)}?=`;
+  const bodyEncoded=toB64(corpo);
+  let emailRaw=`MIME-Version: 1.0\r\nTo: ${para}\r\nSubject: ${subjectEncoded}\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n${bodyEncoded}`;
+  const raw=toB64(emailRaw).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+gmailToken,'Content-Type':'application/json'},
+    body:JSON.stringify({raw})
+  });
+}
+
+async function trocarSenha(){
+  const nova=document.getElementById('nova-senha').value;
+  const conf=document.getElementById('nova-senha-conf').value;
+  if(nova.length<6){showToast('Senha deve ter mínimo 6 caracteres.',true);return;}
+  if(nova!==conf){showToast('As senhas não conferem.',true);return;}
+  const{error}=await sb.auth.updateUser({password:nova});
+  if(error){showToast('Erro: '+error.message,true);return;}
+  showToast('Senha alterada com sucesso!');
+  document.getElementById('modal-senha').style.display='none';
+  // Save flag that password was changed
+  sessionStorage.setItem('senha_trocada','1');
 }
 async function loadUsers(){
   const{data:profiles}=await sbAdmin.from('profiles').select('*').order('nome');
