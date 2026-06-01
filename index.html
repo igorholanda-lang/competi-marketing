@@ -691,10 +691,10 @@ textarea{resize:vertical;min-height:80px;}
 <div id="notif-panel" class="notif-panel">
   <div class="notif-header">
     <div class="notif-title">🔔 Notificações</div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <button class="btn-sm" onclick="marcarTodasLidas()" style="font-size:11px">Marcar todas como lidas</button>
-      <button class="btn-sm danger" onclick="limparNotifs()" style="font-size:11px">🗑 Limpar</button>
-      <button class="modal-close" onclick="toggleNotifPanel()">✕</button>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button onclick="marcarTodasLidas()" style="background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer;padding:4px 6px;border-radius:6px;transition:all .15s" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='none'">✓ Lidas</button>
+      <button onclick="limparNotifs()" style="background:none;border:none;font-size:11px;color:var(--a2);cursor:pointer;padding:4px 6px;border-radius:6px;transition:all .15s" onmouseover="this.style.background='#FAEAEA'" onmouseout="this.style.background='none'">🗑 Limpar</button>
+      <button class="modal-close" onclick="toggleNotifPanel()" style="margin-left:4px">✕</button>
     </div>
   </div>
   <div id="notif-lista" style="flex:1;overflow-y:auto">
