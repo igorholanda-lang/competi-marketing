@@ -838,8 +838,8 @@ textarea{resize:vertical;min-height:80px;}
           <div id="mc-cnpj-loading" style="display:none;position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted)">🔍 Buscando...</div>
         </div>
       </div>
-      <div class="fld"><label>E-mail</label><input type="email" id="mc-email" placeholder="contato@empresa.com.br"></div>
-      <div class="fld"><label>Telefone / WhatsApp</label><input type="text" id="mc-tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
+      <div class="fld"><label>E-mail <span style="color:var(--a2)">*</span></label><input type="email" id="mc-email" placeholder="contato@empresa.com.br"></div>
+      <div class="fld"><label>Telefone / WhatsApp <span style="color:var(--a2)">*</span></label><input type="text" id="mc-tel" placeholder="(00) 00000-0000" oninput="mascaraTel(this)"></div>
       <div class="fld"><label>Responsável / Contato</label><input type="text" id="mc-resp" placeholder="Nome do responsável"></div>
       <div class="fld"><label>Status</label>
         <select id="mc-status">
@@ -850,7 +850,7 @@ textarea{resize:vertical;min-height:80px;}
         </select>
       </div>
     </div>
-    <div class="sdiv" style="margin:16px 0 12px"><h3>Sistemas / Módulos contratados</h3></div>
+    <div class="sdiv" style="margin:16px 0 12px"><h3>Sistemas / Módulos contratados <span style="color:var(--a2)">*</span></h3></div>
     <div id="mc-modulos-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
     <div style="display:flex;gap:8px">
       <input type="text" id="mc-modulo-novo" placeholder="Ex: Competi Fiscal, Contábil, Folha..." onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarModulo();}" style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
@@ -1780,7 +1780,12 @@ function canEditClientes(){return ROLE==='admin'||ROLE==='financeiro';}
 async function salvarCliente(){
   if(!canEditClientes()){showToast('Sem permissão.',true);return;}
   const nome=document.getElementById('mc-nome').value.trim();
+  const email=document.getElementById('mc-email').value.trim();
+  const tel=document.getElementById('mc-tel').value.trim();
   if(!nome){showToast('Preencha o nome do cliente.',true);return;}
+  if(!email){showToast('Preencha o e-mail do cliente.',true);return;}
+  if(!tel){showToast('Preencha o telefone do cliente.',true);return;}
+  if(modulosTemp.length===0){showToast('Adicione pelo menos um sistema/módulo.',true);return;}
   if(!D.clientes)D.clientes=[];
   const isNovo = !editingClienteId;
   const cliente={
