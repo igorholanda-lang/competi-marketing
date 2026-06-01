@@ -706,6 +706,34 @@ textarea{resize:vertical;min-height:80px;}
 </div>
 <div id="notif-overlay" style="display:none;position:fixed;inset:0;z-index:199" onclick="toggleNotifPanel()"></div>
 
+<!-- MODAL WHATSAPP -->
+<div class="modal-overlay" id="modal-whatsapp" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-header">
+      <div class="modal-title">💬 Enviar WhatsApp</div>
+      <button class="modal-close" onclick="document.getElementById('modal-whatsapp').style.display='none'">✕</button>
+    </div>
+    <div class="fld" style="margin-bottom:14px">
+      <label>Destinatário</label>
+      <input type="text" id="wa-destinatario" disabled style="color:var(--muted)">
+    </div>
+    <div class="fld" style="margin-bottom:14px">
+      <label>Mensagem</label>
+      <textarea id="wa-mensagem" style="min-height:140px"></textarea>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      <button class="btn-sm" onclick="waTemplate('bv')">💌 Boas-vindas</button>
+      <button class="btn-sm" onclick="waTemplate('suporte')">🛠 Suporte</button>
+      <button class="btn-sm" onclick="waTemplate('cobranca')">💰 Cobrança</button>
+      <button class="btn-sm" onclick="waTemplate('novidade')">🚀 Novidade</button>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-sm" onclick="document.getElementById('modal-whatsapp').style.display='none'">Cancelar</button>
+      <button class="btn-save" style="background:#25D366" onclick="abrirWhatsApp()">💬 Abrir WhatsApp</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast">✓ <span id="toast-msg">Salvo!</span></div>
 
 <!-- MODAL TROCAR SENHA -->
@@ -1600,9 +1628,9 @@ function renderClientes(lista){
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;background:${statusBg[c.status]||'#eee'};color:${statusColors[c.status]||'#666'}">${c.status||'Ativo'}</span>
-          ${tel?`<a href="${waUrl}" target="_blank" onclick="event.stopPropagation()" title="Enviar WhatsApp" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background:#25D366;color:#fff;text-decoration:none;font-size:18px;transition:opacity .15s" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+          ${tel?`<button onclick="event.stopPropagation();abrirModalWhatsApp('${c.tel}','${c.nome.replace(/'/g,"\\'")}','Olá, ${c.nome.replace(/'/g,"\\'")}! Tudo bem? Aqui é da equipe Competi. 😊')" title="Enviar WhatsApp" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background:#25D366;color:#fff;border:none;cursor:pointer;font-size:18px;transition:opacity .15s" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.859L.057 23.882l6.188-1.448A11.934 11.934 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.894a9.877 9.877 0 01-5.031-1.378l-.361-.214-3.741.981.999-3.648-.235-.374A9.861 9.861 0 012.106 12C2.106 6.58 6.58 2.106 12 2.106c5.42 0 9.894 4.474 9.894 9.894 0 5.42-4.474 9.894-9.894 9.894z"/></svg>
-          </a>`:''}
+          </button>`:''}
           <button onclick="abrirModalCliente('${c.id}')" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background:var(--s2);border:1.5px solid var(--border);cursor:pointer;font-size:14px;transition:all .15s" title="Editar" onmouseover="this.style.borderColor='var(--text)'" onmouseout="this.style.borderColor='var(--border)'">✏️</button>
         </div>
       </div>
@@ -2161,7 +2189,7 @@ function renderNotifs(){
       <div class="notif-actions">
         <button class="btn-sm" onclick="irParaCliente('${n.dados.clienteId}')">👤 Ver cliente</button>
         <button class="btn-sm" onclick="prepararEmailBoasVindas('${n.dados.clienteId}','${n.id}')">📧 E-mail boas-vindas</button>
-        ${n.dados.tel ? `<a href="https://wa.me/55${(n.dados.tel||'').replace(/\D/g,'')}?text=${encodeURIComponent('Olá, '+n.dados.nome+'! Seja bem-vindo(a) à Competi! 🎉 Estamos muito felizes em tê-lo(a) como nosso cliente. Qualquer dúvida, estamos à disposição!')}" target="_blank" class="btn-sm" style="text-decoration:none;background:#25D366;color:#fff;border-color:#25D366">💬 WhatsApp</a>` : ''}
+        ${n.dados.tel ? `<button class="btn-sm" onclick="abrirModalWhatsApp('${n.dados.tel}','${(n.dados.nome||'').replace(/'/g,"\\'")}','')" style="background:#25D366;color:#fff;border-color:#25D366">💬 WhatsApp</button>` : ''}
       </div>` : '';
     return `<div class="notif-item ${n.lida?'':'unread'}" onclick="marcarLida('${n.id}')">
       <div class="notif-item-title">${n.titulo}</div>
@@ -2222,6 +2250,40 @@ function prepararEmailBoasVindas(clienteId, notifId){
     if(corpo) corpo.value = `Olá, ${cliente.nome}!\n\nÉ com grande satisfação que damos as boas-vindas à Competi!\n\nEstamos felizes em tê-lo(a) como nosso cliente e estamos aqui para apoiar sua jornada.\n\nCaso tenha dúvidas ou precise de suporte, não hesite em nos contatar.\n\nAtenciosamente,\nEquipe Competi`;
     showToast('E-mail de boas-vindas preparado!');
   }, 400);
+}
+
+// ══════════════════════════════════════════
+//  WHATSAPP
+// ══════════════════════════════════════════
+let waTelAtual = '';
+let waNomeAtual = '';
+
+function abrirModalWhatsApp(tel, nome, msgInicial){
+  waTelAtual = (tel||'').replace(/\D/g,'');
+  waNomeAtual = nome||'';
+  document.getElementById('wa-destinatario').value = `${nome} · ${tel||'Sem telefone'}`;
+  document.getElementById('wa-mensagem').value = msgInicial || `Olá, ${nome}! Tudo bem? Aqui é da equipe Competi. 😊`;
+  document.getElementById('modal-whatsapp').style.display = 'flex';
+}
+
+function waTemplate(tipo){
+  const nome = waNomeAtual;
+  const msgs = {
+    bv: `Olá, ${nome}! 🎉\n\nSeja bem-vindo(a) à Competi! Estamos muito felizes em tê-lo(a) como nosso cliente.\n\nQualquer dúvida, estamos à disposição!\n\nEquipe Competi 💚`,
+    suporte: `Olá, ${nome}! 👋\n\nEntramos em contato para saber como está sua experiência com o sistema Competi.\n\nPrecisando de suporte ou tendo alguma dúvida, pode falar conosco!\n\nEquipe Competi`,
+    cobranca: `Olá, ${nome}! 👋\n\nPassando para verificar sobre sua fatura em aberto com a Competi.\n\nPodemos ajudá-lo(a) com mais informações ou formas de pagamento?\n\nEquipe Competi`,
+    novidade: `Olá, ${nome}! 🚀\n\nTemos novidades incríveis para você! Atualizamos nosso sistema com melhorias que vão facilitar ainda mais o seu dia a dia.\n\nQuer saber mais? É só responder essa mensagem!\n\nEquipe Competi`
+  };
+  document.getElementById('wa-mensagem').value = msgs[tipo]||'';
+}
+
+function abrirWhatsApp(){
+  if(!waTelAtual){ showToast('Número de telefone não cadastrado.',true); return; }
+  const msg = document.getElementById('wa-mensagem').value.trim();
+  if(!msg){ showToast('Digite uma mensagem.',true); return; }
+  const url = `https://wa.me/55${waTelAtual}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+  document.getElementById('modal-whatsapp').style.display = 'none';
 }
 
 function showToast(msg,err=false){const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;t.classList.toggle('err',err);t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
