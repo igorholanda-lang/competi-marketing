@@ -235,7 +235,11 @@ textarea{resize:vertical;min-height:80px;}
     <div class="page" id="page-clientes">
       <div class="ph">
         <div><h2>🤝 Clientes</h2><p>Base de clientes e sistemas contratados</p></div>
-        <button class="btn-save" onclick="abrirModalCliente(null)">+ Novo cliente</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn-sm" onclick="document.getElementById('modal-import').style.display='flex'">📥 Importar</button>
+          <button class="btn-sm" onclick="exportarClientesExcel()">📤 Exportar Excel</button>
+          <button class="btn-save" onclick="abrirModalCliente(null)">+ Novo cliente</button>
+        </div>
       </div>
 
       <!-- STATS -->
@@ -261,7 +265,7 @@ textarea{resize:vertical;min-height:80px;}
       <div id="clientes-vazio" style="display:none;text-align:center;padding:48px 0;color:var(--muted)">
         <div style="font-size:48px;margin-bottom:12px">🤝</div>
         <div style="font-size:15px;font-weight:600;margin-bottom:6px">Nenhum cliente cadastrado</div>
-        <div style="font-size:13px">Clique em "+ Novo cliente" para começar</div>
+        <div style="font-size:13px">Clique em "+ Novo cliente" para começar ou importe uma planilha</div>
       </div>
     </div>
 
@@ -679,6 +683,74 @@ textarea{resize:vertical;min-height:80px;}
     <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end">
       <button class="btn-sm" onclick="document.getElementById('modal-senha').style.display='none'">Depois</button>
       <button class="btn-save" onclick="trocarSenha()">Salvar nova senha</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR -->
+<div class="modal-overlay" id="modal-import" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title">📥 Importar clientes</div>
+      <button class="modal-close" onclick="document.getElementById('modal-import').style.display='none'">✕</button>
+    </div>
+
+    <!-- TABS -->
+    <div style="display:flex;gap:4px;background:var(--s2);border-radius:10px;padding:4px;margin-bottom:20px">
+      <button class="cal-tab active" id="imp-tab-excel" onclick="switchImportTab('excel')">📊 Excel / CSV</button>
+      <button class="cal-tab" id="imp-tab-gsheets" onclick="switchImportTab('gsheets')">📋 Google Planilhas</button>
+    </div>
+
+    <!-- EXCEL TAB -->
+    <div id="imp-excel">
+      <div class="block" style="margin-bottom:16px;background:var(--s2)">
+        <div class="bt" style="margin-bottom:8px;font-size:13px">📌 Formato esperado da planilha</div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.7">A planilha deve ter as seguintes colunas (na primeira linha):<br>
+        <strong>Nome</strong> | <strong>CNPJ</strong> | <strong>Email</strong> | <strong>Telefone</strong> | <strong>Responsavel</strong> | <strong>Status</strong> | <strong>Sistemas</strong> | <strong>Observacoes</strong><br>
+        <span style="color:var(--a3)">A coluna "Sistemas" pode ter vários sistemas separados por vírgula.</span></p>
+        <button class="btn-sm" onclick="baixarModeloExcel()" style="margin-top:10px">⬇ Baixar modelo Excel</button>
+      </div>
+      <div class="fld" style="margin-bottom:16px">
+        <label>Selecionar arquivo (.xlsx ou .csv)</label>
+        <input type="file" id="imp-file" accept=".xlsx,.xls,.csv" style="padding:8px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <input type="checkbox" id="imp-substituir" style="width:16px;height:16px">
+        <label for="imp-substituir" style="font-size:13px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400">Substituir todos os clientes existentes (ao invés de adicionar)</label>
+      </div>
+      <div id="imp-preview" style="display:none;margin-bottom:16px">
+        <div class="sdiv" style="margin:0 0 10px"><h3 id="imp-preview-count">Prévia</h3></div>
+        <div id="imp-preview-lista" style="max-height:200px;overflow-y:auto"></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-sm" onclick="document.getElementById('modal-import').style.display='none'">Cancelar</button>
+        <button class="btn-save" onclick="importarExcel()" id="btn-imp-excel">Importar</button>
+      </div>
+    </div>
+
+    <!-- GOOGLE SHEETS TAB -->
+    <div id="imp-gsheets" style="display:none">
+      <div class="block" style="margin-bottom:16px;background:var(--s2)">
+        <div class="bt" style="margin-bottom:8px;font-size:13px">📌 Como preparar a planilha</div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.7">
+        1. Abra sua planilha no Google Sheets<br>
+        2. Certifique-se que tem as colunas: <strong>Nome, CNPJ, Email, Telefone, Responsavel, Status, Sistemas, Observacoes</strong><br>
+        3. Clique em <strong>Arquivo → Compartilhar → Publicar na web</strong><br>
+        4. Selecione <strong>Valores separados por vírgula (.csv)</strong> e copie o link
+        </p>
+      </div>
+      <div class="fld" style="margin-bottom:16px">
+        <label>Link da planilha publicada (CSV)</label>
+        <input type="text" id="imp-gsheets-url" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <input type="checkbox" id="imp-gs-substituir" style="width:16px;height:16px">
+        <label for="imp-gs-substituir" style="font-size:13px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400">Substituir todos os clientes existentes</label>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-sm" onclick="document.getElementById('modal-import').style.display='none'">Cancelar</button>
+        <button class="btn-save" onclick="importarGSheets()">Importar do Google Sheets</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1116,6 +1188,140 @@ async function deleteDoc(path, cat) {
   showToast('Arquivo removido!');
   loadDocumentos();
 }
+
+// ══════════════════════════════════════════
+//  IMPORTAR / EXPORTAR CLIENTES
+// ══════════════════════════════════════════
+function switchImportTab(tab){
+  document.getElementById('imp-excel').style.display=tab==='excel'?'block':'none';
+  document.getElementById('imp-gsheets').style.display=tab==='gsheets'?'block':'none';
+  document.getElementById('imp-tab-excel').classList.toggle('active',tab==='excel');
+  document.getElementById('imp-tab-gsheets').classList.toggle('active',tab==='gsheets');
+}
+
+function parsearCSV(texto){
+  const linhas=texto.trim().split('\n').map(l=>l.split(',').map(c=>c.trim().replace(/^"|"$/g,'')));
+  if(linhas.length<2)return[];
+  const headers=linhas[0].map(h=>h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim());
+  const idx=k=>headers.findIndex(h=>h.includes(k));
+  const iNome=idx('nome'),iCnpj=idx('cnpj'),iEmail=idx('email'),iTel=idx('tel'),iResp=idx('resp'),iStatus=idx('status'),iSist=idx('sistem'),iObs=idx('obs');
+  return linhas.slice(1).filter(r=>r.some(c=>c)).map(r=>({
+    id:Date.now().toString()+Math.random().toString(36).slice(2),
+    nome:iNome>=0?r[iNome]||'':'',
+    cnpj:iCnpj>=0?r[iCnpj]||'':'',
+    email:iEmail>=0?r[iEmail]||'':'',
+    tel:iTel>=0?r[iTel]||'':'',
+    resp:iResp>=0?r[iResp]||'':'',
+    status:iStatus>=0?r[iStatus]||'Ativo':'Ativo',
+    modulos:iSist>=0?(r[iSist]||'').split(';').map(s=>s.trim()).filter(Boolean):[],
+    obs:iObs>=0?r[iObs]||'':''
+  })).filter(c=>c.nome);
+}
+
+function mostrarPreview(clientes){
+  const prev=document.getElementById('imp-preview');
+  const lista=document.getElementById('imp-preview-lista');
+  const count=document.getElementById('imp-preview-count');
+  if(!prev||!lista)return;
+  prev.style.display='block';
+  count.textContent=`Prévia — ${clientes.length} cliente(s) encontrado(s)`;
+  lista.innerHTML=clientes.slice(0,5).map(c=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><strong>${c.nome}</strong> ${c.cnpj?'· '+c.cnpj:''} ${c.status?'· '+c.status:''}</div>`).join('')+(clientes.length>5?`<div style="font-size:12px;color:var(--muted);padding:6px 0">...e mais ${clientes.length-5} clientes</div>`:'');
+}
+
+async function importarExcel(){
+  const file=document.getElementById('imp-file').files[0];
+  if(!file){showToast('Selecione um arquivo.',true);return;}
+  const substituir=document.getElementById('imp-substituir').checked;
+  const btn=document.getElementById('btn-imp-excel');
+  btn.disabled=true;btn.textContent='Importando...';
+  try{
+    let clientes=[];
+    if(file.name.endsWith('.csv')){
+      const text=await file.text();
+      clientes=parsearCSV(text);
+    }else{
+      // XLSX
+      const data=await file.arrayBuffer();
+      const wb=XLSX.read(data,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const csv=XLSX.utils.sheet_to_csv(ws);
+      clientes=parsearCSV(csv);
+    }
+    if(clientes.length===0){showToast('Nenhum cliente encontrado. Verifique o formato.',true);return;}
+    mostrarPreview(clientes);
+    if(substituir) D.clientes=clientes;
+    else D.clientes=[...(D.clientes||[]),...clientes];
+    await saveAll();
+    document.getElementById('modal-import').style.display='none';
+    carregarClientes();
+    showToast(`${clientes.length} clientes importados com sucesso!`);
+  }catch(e){showToast('Erro ao importar: '+e.message,true);}
+  finally{btn.disabled=false;btn.textContent='Importar';}
+}
+
+async function importarGSheets(){
+  const url=document.getElementById('imp-gsheets-url').value.trim();
+  if(!url){showToast('Cole o link da planilha.',true);return;}
+  const substituir=document.getElementById('imp-gs-substituir').checked;
+  showToast('Buscando dados...');
+  try{
+    const res=await fetch(url);
+    if(!res.ok)throw new Error('Não foi possível acessar a planilha. Verifique se está publicada.');
+    const text=await res.text();
+    const clientes=parsearCSV(text);
+    if(clientes.length===0){showToast('Nenhum cliente encontrado. Verifique o formato.',true);return;}
+    if(substituir) D.clientes=clientes;
+    else D.clientes=[...(D.clientes||[]),...clientes];
+    await saveAll();
+    document.getElementById('modal-import').style.display='none';
+    carregarClientes();
+    showToast(`${clientes.length} clientes importados do Google Sheets!`);
+  }catch(e){showToast('Erro: '+e.message,true);}
+}
+
+function baixarModeloExcel(){
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([
+    ['Nome','CNPJ','Email','Telefone','Responsavel','Status','Sistemas','Observacoes'],
+    ['Contabilidade Silva Ltda','12.345.678/0001-90','contato@silva.com.br','(62) 99999-1234','João Silva','Ativo','Competi Fiscal;Competi Contábil','Cliente desde 2020'],
+    ['Escritório Exemplo ME','98.765.432/0001-10','exemplo@email.com','(11) 98888-5678','Maria Santos','Trial','Competi Folha','Período de teste'],
+  ]);
+  ws['!cols']=[{wch:30},{wch:20},{wch:25},{wch:18},{wch:20},{wch:12},{wch:30},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws,'Clientes');
+  XLSX.writeFile(wb,'modelo_clientes_competi.xlsx');
+  showToast('Modelo baixado!');
+}
+
+function exportarClientesExcel(){
+  const clientes=getClientes();
+  if(clientes.length===0){showToast('Nenhum cliente para exportar.',true);return;}
+  const wb=XLSX.utils.book_new();
+  const rows=[['Nome','CNPJ','Email','Telefone','Responsavel','Status','Sistemas','Observacoes']];
+  clientes.forEach(c=>rows.push([c.nome||'',c.cnpj||'',c.email||'',c.tel||'',c.resp||'',c.status||'',( c.modulos||[]).join(';'),c.obs||'']));
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:30},{wch:20},{wch:25},{wch:18},{wch:20},{wch:12},{wch:30},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws,'Clientes');
+  XLSX.writeFile(wb,`clientes_competi_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.xlsx`);
+  showToast('Clientes exportados!');
+}
+
+// Prévia ao selecionar arquivo
+document.addEventListener('change',function(e){
+  if(e.target.id==='imp-file'&&e.target.files[0]){
+    const file=e.target.files[0];
+    const reader=new FileReader();
+    reader.onload=async function(ev){
+      try{
+        let clientes=[];
+        if(file.name.endsWith('.csv')){clientes=parsearCSV(ev.target.result);}
+        else{const wb=XLSX.read(ev.target.result,{type:'binary'});const ws=wb.Sheets[wb.SheetNames[0]];clientes=parsearCSV(XLSX.utils.sheet_to_csv(ws));}
+        mostrarPreview(clientes);
+      }catch(e){}
+    };
+    if(file.name.endsWith('.csv'))reader.readAsText(file);
+    else reader.readAsBinaryString(file);
+  }
+});
 
 // ══════════════════════════════════════════
 //  CLIENTES
