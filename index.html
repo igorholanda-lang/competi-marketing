@@ -36,6 +36,22 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .urole{font-size:10px;color:#666;}
 .btn-logout{background:none;border:none;color:#555;cursor:pointer;font-size:14px;padding:2px;transition:color .15s;flex-shrink:0;}
 .btn-logout:hover{color:#FF6B6B;}
+/* NOTIFICAÇÕES */
+.notif-btn{position:relative;background:none;border:none;color:#888;cursor:pointer;font-size:16px;padding:4px;transition:color .15s;flex-shrink:0;}
+.notif-btn:hover{color:#F5F3EE;}
+.notif-badge{position:absolute;top:-2px;right:-2px;background:#FF6B6B;color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;display:none;}
+.notif-panel{position:fixed;top:0;right:0;width:360px;height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:200;display:none;flex-direction:column;box-shadow:-4px 0 20px rgba(0,0,0,.1);animation:slideIn .25s ease;}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.notif-header{display:flex;align-items:center;justify-content:space-between;padding:20px;border-bottom:1px solid var(--border);}
+.notif-title{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;}
+.notif-item{padding:14px 20px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.notif-item:hover{background:var(--s2);}
+.notif-item.unread{background:rgba(0,200,132,.05);border-left:3px solid var(--a1);}
+.notif-item-title{font-size:13px;font-weight:600;margin-bottom:4px;}
+.notif-item-desc{font-size:12px;color:var(--muted);font-weight:300;line-height:1.4;}
+.notif-item-time{font-size:11px;color:var(--muted);margin-top:4px;}
+.notif-empty{padding:40px 20px;text-align:center;color:var(--muted);}
+.notif-actions{display:flex;gap:8px;padding:14px 20px;margin-top:10px;}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:#888;transition:all .15s;border:none;background:none;width:100%;text-align:left;}
 .nav-item:hover{background:rgba(255,255,255,.06);color:#F5F3EE;} .nav-item.active{background:rgba(255,255,255,.1);color:#F5F3EE;font-weight:500;}
 .nicon{font-size:15px;width:20px;text-align:center;flex-shrink:0;}
@@ -175,6 +191,10 @@ textarea{resize:vertical;min-height:80px;}
     <div class="upill">
       <div class="uav" id="nav-av">?</div>
       <div class="uinfo"><div class="uname" id="nav-nm">—</div><div class="urole" id="nav-rl">—</div></div>
+      <button class="notif-btn" onclick="toggleNotifPanel()" title="Notificações" id="notif-btn">
+        🔔
+        <span class="notif-badge" id="notif-badge">0</span>
+      </button>
       <button class="btn-logout" onclick="doLogout()" title="Sair">↩</button>
     </div>
     <button class="nav-item" onclick="document.getElementById('modal-senha').style.display='flex'" style="color:#888;font-size:12px;padding:6px 12px;margin-bottom:4px"><span class="nicon" style="font-size:12px">🔑</span> Trocar minha senha</button>
@@ -667,6 +687,24 @@ textarea{resize:vertical;min-height:80px;}
   </main>
 </div>
 </div>
+<!-- PAINEL DE NOTIFICAÇÕES -->
+<div id="notif-panel" class="notif-panel">
+  <div class="notif-header">
+    <div class="notif-title">🔔 Notificações</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn-sm" onclick="marcarTodasLidas()" style="font-size:11px">Marcar todas como lidas</button>
+      <button class="modal-close" onclick="toggleNotifPanel()">✕</button>
+    </div>
+  </div>
+  <div id="notif-lista" style="flex:1;overflow-y:auto">
+    <div class="notif-empty">
+      <div style="font-size:32px;margin-bottom:8px">🔔</div>
+      <div>Nenhuma notificação ainda</div>
+    </div>
+  </div>
+</div>
+<div id="notif-overlay" style="display:none;position:fixed;inset:0;z-index:199" onclick="toggleNotifPanel()"></div>
+
 <div class="toast" id="toast">✓ <span id="toast-msg">Salvo!</span></div>
 
 <!-- MODAL TROCAR SENHA -->
@@ -870,6 +908,7 @@ async function bootApp(user){
   document.getElementById('lspin').style.display='none';
   await loadData();
   init();
+  renderNotifs();
 }
 async function doLogout(){await sb.auth.signOut();CU=null;ROLE=null;document.getElementById('app-screen').style.display='none';document.getElementById('login-screen').style.display='flex';document.getElementById('lin-pass').value='';document.getElementById('lerr').textContent='';document.getElementById('btn-login').disabled=false;}
 function setRO(ro){document.querySelectorAll('#app-screen input,#app-screen textarea,#app-screen select').forEach(el=>{if(ro)el.setAttribute('disabled','');else el.removeAttribute('disabled');});document.querySelectorAll('.btn-save,.btn-add,.btn-rm,.sopt').forEach(el=>{el.disabled=ro;el.style.pointerEvents=ro?'none':'';});}
@@ -1581,6 +1620,7 @@ async function salvarCliente(){
   const nome=document.getElementById('mc-nome').value.trim();
   if(!nome){showToast('Preencha o nome do cliente.',true);return;}
   if(!D.clientes)D.clientes=[];
+  const isNovo = !editingClienteId;
   const cliente={
     id:editingClienteId||Date.now().toString(),
     nome,
@@ -1590,7 +1630,8 @@ async function salvarCliente(){
     resp:document.getElementById('mc-resp').value,
     status:document.getElementById('mc-status').value,
     obs:document.getElementById('mc-obs').value,
-    modulos:[...modulosTemp]
+    modulos:[...modulosTemp],
+    criadoEm: editingClienteId ? (D.clientes.find(c=>c.id===editingClienteId)?.criadoEm||new Date().toISOString()) : new Date().toISOString()
   };
   if(editingClienteId){
     const idx=D.clientes.findIndex(c=>c.id===editingClienteId);
@@ -1601,6 +1642,35 @@ async function salvarCliente(){
   await saveAll();
   fecharModalCliente();
   carregarClientes();
+
+  // Notificação para novo cliente
+  if(isNovo){
+    const modulosStr = cliente.modulos.length > 0 ? ` · Sistemas: ${cliente.modulos.join(', ')}` : '';
+    adicionarNotif(
+      `🤝 Novo cliente cadastrado!`,
+      `${cliente.nome}${cliente.cnpj?' · '+cliente.cnpj:''}${modulosStr}`,
+      'novo_cliente',
+      { clienteId: cliente.id, email: cliente.email, nome: cliente.nome }
+    );
+    // Enviar e-mail de aviso para o admin
+    if(gmailToken && CU){
+      const adminEmail = CU.email;
+      await enviarEmailDireto(
+        adminEmail,
+        `🤝 Novo cliente cadastrado: ${cliente.nome}`,
+        `Olá!\n\nUm novo cliente foi cadastrado no Dashboard de Marketing da Competi.\n\n` +
+        `👤 Nome: ${cliente.nome}\n` +
+        `📄 CNPJ: ${cliente.cnpj||'Não informado'}\n` +
+        `📧 E-mail: ${cliente.email||'Não informado'}\n` +
+        `📞 Telefone: ${cliente.tel||'Não informado'}\n` +
+        `🔧 Sistemas: ${cliente.modulos.length>0?cliente.modulos.join(', '):'Não informado'}\n` +
+        `📊 Status: ${cliente.status}\n\n` +
+        `Acesse o dashboard para enviar o e-mail de boas-vindas:\n` +
+        `https://igorholanda-lang.github.io/competi-marketing/\n\n` +
+        `Equipe Competi`
+      );
+    }
+  }
 }
 
 async function excluirCliente(){
@@ -1971,6 +2041,103 @@ function loadTemplate(tipo) {
   const t = templates[tipo] || templates.vazio;
   document.getElementById('email-assunto').value = t.assunto;
   document.getElementById('email-corpo').value = t.corpo;
+}
+
+// ══════════════════════════════════════════
+//  SISTEMA DE NOTIFICAÇÕES
+// ══════════════════════════════════════════
+function getNotifs(){ return JSON.parse(localStorage.getItem('competi_notifs')||'[]'); }
+function saveNotifs(n){ localStorage.setItem('competi_notifs', JSON.stringify(n)); }
+
+function adicionarNotif(titulo, desc, tipo, dados){
+  const notifs = getNotifs();
+  notifs.unshift({
+    id: Date.now().toString(),
+    titulo, desc, tipo,
+    dados: dados||{},
+    lida: false,
+    hora: new Date().toISOString()
+  });
+  // Keep only last 50
+  if(notifs.length > 50) notifs.pop();
+  saveNotifs(notifs);
+  renderNotifs();
+}
+
+function renderNotifs(){
+  const notifs = getNotifs();
+  const naoLidas = notifs.filter(n=>!n.lida).length;
+  const badge = document.getElementById('notif-badge');
+  if(badge){
+    badge.style.display = naoLidas > 0 ? 'flex' : 'none';
+    badge.textContent = naoLidas > 9 ? '9+' : naoLidas;
+  }
+  const lista = document.getElementById('notif-lista');
+  if(!lista) return;
+  if(notifs.length === 0){
+    lista.innerHTML = '<div class="notif-empty"><div style="font-size:32px;margin-bottom:8px">🔔</div><div>Nenhuma notificação ainda</div></div>';
+    return;
+  }
+  lista.innerHTML = notifs.map(n => {
+    const hora = new Date(n.hora).toLocaleString('pt-BR');
+    const acoes = n.tipo === 'novo_cliente' ? `
+      <div class="notif-actions">
+        <button class="btn-sm" onclick="irParaCliente('${n.dados.clienteId}')">👤 Ver cliente</button>
+        <button class="btn-sm" onclick="prepararEmailBoasVindas('${n.dados.clienteId}','${n.id}')">📧 Enviar e-mail de boas-vindas</button>
+      </div>` : '';
+    return `<div class="notif-item ${n.lida?'':'unread'}" onclick="marcarLida('${n.id}')">
+      <div class="notif-item-title">${n.titulo}</div>
+      <div class="notif-item-desc">${n.desc}</div>
+      <div class="notif-item-time">${hora}</div>
+      ${acoes}
+    </div>`;
+  }).join('');
+}
+
+function toggleNotifPanel(){
+  const panel = document.getElementById('notif-panel');
+  const overlay = document.getElementById('notif-overlay');
+  const aberto = panel.style.display === 'flex';
+  panel.style.display = aberto ? 'none' : 'flex';
+  overlay.style.display = aberto ? 'none' : 'block';
+  if(!aberto) renderNotifs();
+}
+
+function marcarLida(id){
+  const notifs = getNotifs();
+  const n = notifs.find(x=>x.id===id);
+  if(n) n.lida = true;
+  saveNotifs(notifs);
+  renderNotifs();
+}
+
+function marcarTodasLidas(){
+  const notifs = getNotifs().map(n=>({...n,lida:true}));
+  saveNotifs(notifs);
+  renderNotifs();
+}
+
+function irParaCliente(clienteId){
+  toggleNotifPanel();
+  goTo('clientes');
+  setTimeout(()=>{ if(clienteId) abrirModalCliente(clienteId); }, 300);
+}
+
+function prepararEmailBoasVindas(clienteId, notifId){
+  const cliente = (D.clientes||[]).find(c=>c.id===clienteId);
+  if(!cliente){ showToast('Cliente não encontrado.',true); return; }
+  marcarLida(notifId);
+  toggleNotifPanel();
+  goTo('enviar_email');
+  setTimeout(()=>{
+    const para = document.getElementById('email-para');
+    const assunto = document.getElementById('email-assunto');
+    const corpo = document.getElementById('email-corpo');
+    if(para) para.value = cliente.email||'';
+    if(assunto) assunto.value = `Bem-vindo(a) à Competi, ${cliente.nome}! 🎉`;
+    if(corpo) corpo.value = `Olá, ${cliente.nome}!\n\nÉ com grande satisfação que damos as boas-vindas à Competi!\n\nEstamos felizes em tê-lo(a) como nosso cliente e estamos aqui para apoiar sua jornada.\n\nCaso tenha dúvidas ou precise de suporte, não hesite em nos contatar.\n\nAtenciosamente,\nEquipe Competi`;
+    showToast('E-mail de boas-vindas preparado!');
+  }, 400);
 }
 
 function showToast(msg,err=false){const t=document.getElementById('toast');document.getElementById('toast-msg').textContent=msg;t.classList.toggle('err',err);t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
