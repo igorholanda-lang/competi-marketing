@@ -313,7 +313,17 @@ textarea{resize:vertical;min-height:80px;}
     </div>
     <!-- MÉTRICAS -->
     <div class="page" id="page-metricas">
-      <div class="ph"><div><h2>Métricas &amp; Resultados</h2><p>Números reais de cada canal</p></div><div style="display:flex;gap:8px"><button class="btn-save" style="background:#1877F2" onclick="sincronizarMetaAds()">📊 Sincronizar Meta Ads</button><button class="btn-save" style="background:#1A6B55" onclick="exportExcel()">📊 Exportar Excel</button><button class="btn-save" onclick="saveAll()">Salvar</button></div></div>
+      <div class="ph"><div><h2>Métricas &amp; Resultados</h2><p>Números reais de cada canal</p></div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;gap:6px;align-items:center;background:var(--s2);border:1.5px solid var(--border);border-radius:10px;padding:6px 10px">
+          <span style="font-size:12px;color:var(--muted)">De</span>
+          <input type="date" id="meta-desde" style="border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;color:var(--text);padding:0">
+          <span style="font-size:12px;color:var(--muted)">até</span>
+          <input type="date" id="meta-ate" style="border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;color:var(--text);padding:0">
+        </div>
+        <button class="btn-save" style="background:#1877F2" onclick="sincronizarMetaAds()">📊 Sincronizar Meta Ads</button>
+        <button class="btn-save" style="background:#1A6B55" onclick="exportExcel()">📊 Exportar Excel</button>
+        <button class="btn-save" onclick="saveAll()">Salvar</button>
+      </div></div>
       <div id="meta-status" style="display:none;margin-bottom:16px"></div>
       <div class="sdiv"><h3>Tráfego pago</h3></div>
       <div class="fg c3">
@@ -997,8 +1007,14 @@ function goTo(page){
       },100);
     }
   }
-}
-function init(){['leads','seguidores','cpl','visitas','budget','data'].forEach(k=>{const e=document.getElementById('kpi_'+k);if(e)e.value=D.kpis[k]||'';});const m=document.getElementById('mkl_desc');if(m)m.value=D.mkl||'';const s=document.getElementById('skl_desc');if(s)s.value=D.skl||'';document.querySelectorAll('.sopt').forEach(o=>o.classList.toggle('selected',o.textContent.trim().includes(D.status)));['topo','meio','fundo'].forEach(e=>['canais','obj','desc'].forEach(f=>{const el=document.getElementById(`f_${e}_${f}`);if(el)el.value=D.funil[e][f]||'';}));renderCanais();['curto','medio','longo'].forEach(p=>renderPrazos(p));renderEquipe();renderPassos();const ebv=D.ebv||{};['assunto','remetente','tom','gatilho','abertura','corpo','cta','assinatura','links','obs'].forEach(k=>{const e=document.getElementById('ebv_'+k);if(e)e.value=ebv[k]||'';});const eb=D.ebase||{};['freq','seg','obj','tool','obs'].forEach(k=>{const e=document.getElementById('eb_'+k);if(e)e.value=eb[k]||'';});renderEbaseConteudos();renderIgLista();const ig1=document.getElementById('ig_est');if(ig1)ig1.value=D.ig_est||'';const ig2=document.getElementById('ig_sr');if(ig2)ig2.value=D.ig_sr||'';const v=D.video||{};['tt','yt'].forEach(ch=>{const c=v[ch]||{};['status','freq','conteudo','metricas','prazo'].forEach(k=>{const e=document.getElementById(`${ch}_${k}`);if(e)e.value=c[k]||'';});});[['reap','vc_reap'],['infl','vc_infl'],['esc','vc_esc'],['paus','vc_paus']].forEach(([k,id])=>{const e=document.getElementById(id);if(e)e.value=v[k]||'';});renderProdutos();const mt=D.met?.trafego||{};['periodo','invest','leads','cpl','impressoes','cliques','ctr','conv','plataforma'].forEach(k=>{const e=document.getElementById('mt_'+k);if(e)e.value=mt[k]||'';});const mi=D.met?.ig||{};['periodo','seg','novos','alcance','impressoes','eng','posts','reels','bio'].forEach(k=>{const e=document.getElementById('mi_'+k);if(e)e.value=mi[k]||'';});const mb=D.met?.blog||{};['periodo','visitas','pageviews','artigos','tempo','rejeicao'].forEach(k=>{const e=document.getElementById('mb_'+k);if(e)e.value=mb[k]||'';});const me=D.met?.email||{};['periodo','enviados','abertura','clique','desc','base'].forEach(k=>{const e=document.getElementById('me_'+k);if(e)e.value=me[k]||'';});const mv=D.met?.video||{};['periodo','tt_seg','tt_views','yt_inscritos','yt_views','total'].forEach(k=>{const e=document.getElementById('mv_'+k);if(e)e.value=mv[k]||'';});const mo=document.getElementById('met_obs');if(mo)mo.value=D.met?.obs||'';const ev=D.eventos||{};['pos','cont','canais','parc','cal'].forEach(k=>{const e=document.getElementById('ev_rt_'+k);if(e)e.value=(ev.rt||{})[k]||'';});renderEventosList();const evd=document.getElementById('ev_div');if(evd)evd.value=ev.div||'';const pod=D.podcast||{};['nome','slogan','tema','publico','formato','freq','duracao','grav','edicao','plat','status','cc','cq','cr','cres'].forEach(k=>{const e=document.getElementById('pod_'+k);if(e)e.value=pod[k]||'';});renderEpisodios();const en=D.endo||{};const ea=en.assin||{};['status','resp','elem','tool','obs'].forEach(k=>{const e=document.getElementById('ea_'+k);if(e)e.value=ea[k]||'';});const ef=en.foto||{};['status','resp','padrao','qtd'].forEach(k=>{const e=document.getElementById('ef_'+k);if(e)e.value=ef[k]||'';});renderEndoDatas();const eo=document.getElementById('endo_outras');if(eo)eo.value=en.outras||'';const cu=D.cursos||{};['alura_email','alura_plano','alura_venc','alura_and'].forEach(k=>{const e=document.getElementById(k);if(e)e.value=cu[k]||'';});const co=document.getElementById('cursos_outras');if(co)co.value=cu.outras||'';renderCertificados();renderCursosInteresse();renderIgSeguir();}
+  if(page==='metricas'){
+    const now=new Date();
+    const desde=document.getElementById('meta-desde');
+    const ate=document.getElementById('meta-ate');
+    if(desde&&!desde.value)desde.value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+    if(ate&&!ate.value)ate.value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  }
+}['leads','seguidores','cpl','visitas','budget','data'].forEach(k=>{const e=document.getElementById('kpi_'+k);if(e)e.value=D.kpis[k]||'';});const m=document.getElementById('mkl_desc');if(m)m.value=D.mkl||'';const s=document.getElementById('skl_desc');if(s)s.value=D.skl||'';document.querySelectorAll('.sopt').forEach(o=>o.classList.toggle('selected',o.textContent.trim().includes(D.status)));['topo','meio','fundo'].forEach(e=>['canais','obj','desc'].forEach(f=>{const el=document.getElementById(`f_${e}_${f}`);if(el)el.value=D.funil[e][f]||'';}));renderCanais();['curto','medio','longo'].forEach(p=>renderPrazos(p));renderEquipe();renderPassos();const ebv=D.ebv||{};['assunto','remetente','tom','gatilho','abertura','corpo','cta','assinatura','links','obs'].forEach(k=>{const e=document.getElementById('ebv_'+k);if(e)e.value=ebv[k]||'';});const eb=D.ebase||{};['freq','seg','obj','tool','obs'].forEach(k=>{const e=document.getElementById('eb_'+k);if(e)e.value=eb[k]||'';});renderEbaseConteudos();renderIgLista();const ig1=document.getElementById('ig_est');if(ig1)ig1.value=D.ig_est||'';const ig2=document.getElementById('ig_sr');if(ig2)ig2.value=D.ig_sr||'';const v=D.video||{};['tt','yt'].forEach(ch=>{const c=v[ch]||{};['status','freq','conteudo','metricas','prazo'].forEach(k=>{const e=document.getElementById(`${ch}_${k}`);if(e)e.value=c[k]||'';});});[['reap','vc_reap'],['infl','vc_infl'],['esc','vc_esc'],['paus','vc_paus']].forEach(([k,id])=>{const e=document.getElementById(id);if(e)e.value=v[k]||'';});renderProdutos();const mt=D.met?.trafego||{};['periodo','invest','leads','cpl','impressoes','cliques','ctr','conv','plataforma'].forEach(k=>{const e=document.getElementById('mt_'+k);if(e)e.value=mt[k]||'';});const mi=D.met?.ig||{};['periodo','seg','novos','alcance','impressoes','eng','posts','reels','bio'].forEach(k=>{const e=document.getElementById('mi_'+k);if(e)e.value=mi[k]||'';});const mb=D.met?.blog||{};['periodo','visitas','pageviews','artigos','tempo','rejeicao'].forEach(k=>{const e=document.getElementById('mb_'+k);if(e)e.value=mb[k]||'';});const me=D.met?.email||{};['periodo','enviados','abertura','clique','desc','base'].forEach(k=>{const e=document.getElementById('me_'+k);if(e)e.value=me[k]||'';});const mv=D.met?.video||{};['periodo','tt_seg','tt_views','yt_inscritos','yt_views','total'].forEach(k=>{const e=document.getElementById('mv_'+k);if(e)e.value=mv[k]||'';});const mo=document.getElementById('met_obs');if(mo)mo.value=D.met?.obs||'';const ev=D.eventos||{};['pos','cont','canais','parc','cal'].forEach(k=>{const e=document.getElementById('ev_rt_'+k);if(e)e.value=(ev.rt||{})[k]||'';});renderEventosList();const evd=document.getElementById('ev_div');if(evd)evd.value=ev.div||'';const pod=D.podcast||{};['nome','slogan','tema','publico','formato','freq','duracao','grav','edicao','plat','status','cc','cq','cr','cres'].forEach(k=>{const e=document.getElementById('pod_'+k);if(e)e.value=pod[k]||'';});renderEpisodios();const en=D.endo||{};const ea=en.assin||{};['status','resp','elem','tool','obs'].forEach(k=>{const e=document.getElementById('ea_'+k);if(e)e.value=ea[k]||'';});const ef=en.foto||{};['status','resp','padrao','qtd'].forEach(k=>{const e=document.getElementById('ef_'+k);if(e)e.value=ef[k]||'';});renderEndoDatas();const eo=document.getElementById('endo_outras');if(eo)eo.value=en.outras||'';const cu=D.cursos||{};['alura_email','alura_plano','alura_venc','alura_and'].forEach(k=>{const e=document.getElementById(k);if(e)e.value=cu[k]||'';});const co=document.getElementById('cursos_outras');if(co)co.value=cu.outras||'';renderCertificados();renderCursosInteresse();renderIgSeguir();}
 function selStatus(el,val){if(ROLE!=='admin')return;document.querySelectorAll('.sopt').forEach(o=>o.classList.remove('selected'));el.classList.add('selected');D.status=val;}
 function renderCanais(){const l=document.getElementById('canal-list');l.innerHTML='';D.canais.forEach((c,i)=>{const r=document.createElement('div');r.className='crow crow-d';r.style.cssText='display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:end;margin-bottom:8px';r.innerHTML=`<div class="fld">${i===0?'<label>Canal</label>':''}<input type="text" class="c-n" value="${c.nome}" placeholder="Ex: Instagram"></div><div class="fld">${i===0?'<label>Tipo</label>':''}<input type="text" class="c-t" value="${c.tipo}" placeholder="Orgânico + Pago"></div><div class="fld">${i===0?'<label>Status</label>':''}<select class="c-s"><option ${c.status==='Ativo'?'selected':''}>Ativo</option><option ${c.status==='Planejado'?'selected':''}>Planejado</option><option ${c.status==='A contratar'?'selected':''}>A contratar</option><option ${c.status==='Pausado'?'selected':''}>Pausado</option></select></div><button class="btn-rm" onclick="removeCanal(${i})" style="margin-top:${i===0?'22':'0'}px">✕</button>`;l.appendChild(r);});}
 function addCanal(){if(ROLE!=='admin')return;collect();D.canais.push({nome:'',tipo:'',status:'Planejado'});renderCanais();}
@@ -1438,11 +1454,21 @@ async function sincronizarMetaAds(){
   statusEl.innerHTML = '<div style="background:#EDF4FF;border:1px solid #B8D0FF;border-radius:10px;padding:12px 16px;font-size:13px;color:#1877F2">🔄 Buscando dados do Meta Ads...</div>';
 
   try{
-    // Get date range — current month
     const now = new Date();
-    const since = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-    const until = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-    const periodo = `${now.toLocaleString('pt-BR',{month:'long'})}/${now.getFullYear()}`;
+
+    // Use selected dates or default to current month
+    let since = document.getElementById('meta-desde')?.value;
+    let until = document.getElementById('meta-ate')?.value;
+
+    if(!since) since = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+    if(!until) until = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+    // Format period label
+    const d1 = new Date(since+'T12:00:00');
+    const d2 = new Date(until+'T12:00:00');
+    const periodo = d1.getMonth()===d2.getMonth() && d1.getFullYear()===d2.getFullYear()
+      ? `${d1.toLocaleString('pt-BR',{month:'long'})}/${d1.getFullYear()}`
+      : `${d1.toLocaleDateString('pt-BR')} a ${d2.toLocaleDateString('pt-BR')}`;
 
     const fields = 'spend,impressions,clicks,ctr,cpc,actions,cost_per_action_type';
     const url = `https://graph.facebook.com/v19.0/${META_ACCOUNT}/insights?fields=${fields}&time_range={"since":"${since}","until":"${until}"}&access_token=${META_TOKEN}`;
@@ -1450,21 +1476,16 @@ async function sincronizarMetaAds(){
     const res = await fetch(url);
     const data = await res.json();
 
-    if(data.error){
-      throw new Error(data.error.message);
-    }
+    if(data.error) throw new Error(data.error.message);
 
     if(!data.data || data.data.length === 0){
-      statusEl.innerHTML = '<div style="background:#FBF5E0;border:1px solid #E2C97A;border-radius:10px;padding:12px 16px;font-size:13px;color:var(--a3)">⚠️ Nenhum dado encontrado para o período atual. Verifique se há campanhas ativas.</div>';
+      statusEl.innerHTML = '<div style="background:#FBF5E0;border:1px solid #E2C97A;border-radius:10px;padding:12px 16px;font-size:13px;color:var(--a3)">⚠️ Nenhum dado encontrado para o período selecionado.</div>';
       return;
     }
 
     const d = data.data[0];
-
-    // Extract leads from actions
     const leadsAction = (d.actions||[]).find(a=>a.action_type==='lead'||a.action_type==='offsite_conversion.fb_pixel_lead');
     const leads = leadsAction ? parseInt(leadsAction.value) : 0;
-
     const spend = parseFloat(d.spend||0);
     const impressions = parseInt(d.impressions||0);
     const clicks = parseInt(d.clicks||0);
@@ -1472,7 +1493,6 @@ async function sincronizarMetaAds(){
     const cpl = leads > 0 ? (spend/leads).toFixed(2) : 0;
     const conv = clicks > 0 ? ((leads/clicks)*100).toFixed(2) : 0;
 
-    // Fill in the fields
     const set = (id, val) => { const el=document.getElementById(id); if(el) el.value=val; };
     set('mt_periodo', periodo);
     set('mt_invest', spend.toFixed(2));
