@@ -313,7 +313,8 @@ textarea{resize:vertical;min-height:80px;}
     </div>
     <!-- MÉTRICAS -->
     <div class="page" id="page-metricas">
-      <div class="ph"><div><h2>Métricas &amp; Resultados</h2><p>Números reais de cada canal</p></div><div style="display:flex;gap:8px"><button class="btn-save" style="background:#1A6B55" onclick="exportExcel()">📊 Exportar Excel</button><button class="btn-save" onclick="saveAll()">Salvar</button></div></div>
+      <div class="ph"><div><h2>Métricas &amp; Resultados</h2><p>Números reais de cada canal</p></div><div style="display:flex;gap:8px"><button class="btn-save" style="background:#1877F2" onclick="sincronizarMetaAds()">📊 Sincronizar Meta Ads</button><button class="btn-save" style="background:#1A6B55" onclick="exportExcel()">📊 Exportar Excel</button><button class="btn-save" onclick="saveAll()">Salvar</button></div></div>
+      <div id="meta-status" style="display:none;margin-bottom:16px"></div>
       <div class="sdiv"><h3>Tráfego pago</h3></div>
       <div class="fg c3">
         <div class="fld"><label>Período</label><input type="text" id="mt_periodo" placeholder="Ex: Maio/2025"></div>
@@ -1423,6 +1424,84 @@ async function deleteDoc(path, cat) {
   if (error) { showToast('Erro ao remover.', true); return; }
   showToast('Arquivo removido!');
   loadDocumentos();
+}
+
+// ══════════════════════════════════════════
+//  META ADS INTEGRATION
+// ══════════════════════════════════════════
+const META_TOKEN = 'EAAiy60B3sOoBRlYIVL9hkYViA1fh2rVRX8ZCt2zMqIPZAovhTwS2uPH2z0d9TmgDQqZC2sKRinZCoNjqLklqOgWEMH7rpcHZBOKAwnD7Oxi3DatFp8rP75tUMFlwIrTFZAXZAl6yKWnUMVgERifJTaJ3pOX9GCEIlgeeZBeQMKElezSijG2tI1aclIZBn3Rg1HBBz8XZBSJ75Y';
+const META_ACCOUNT = 'act_190194732069304';
+
+async function sincronizarMetaAds(){
+  const statusEl = document.getElementById('meta-status');
+  statusEl.style.display = 'block';
+  statusEl.innerHTML = '<div style="background:#EDF4FF;border:1px solid #B8D0FF;border-radius:10px;padding:12px 16px;font-size:13px;color:#1877F2">🔄 Buscando dados do Meta Ads...</div>';
+
+  try{
+    // Get date range — current month
+    const now = new Date();
+    const since = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+    const until = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const periodo = `${now.toLocaleString('pt-BR',{month:'long'})}/${now.getFullYear()}`;
+
+    const fields = 'spend,impressions,clicks,ctr,cpc,actions,cost_per_action_type';
+    const url = `https://graph.facebook.com/v19.0/${META_ACCOUNT}/insights?fields=${fields}&time_range={"since":"${since}","until":"${until}"}&access_token=${META_TOKEN}`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if(data.error){
+      throw new Error(data.error.message);
+    }
+
+    if(!data.data || data.data.length === 0){
+      statusEl.innerHTML = '<div style="background:#FBF5E0;border:1px solid #E2C97A;border-radius:10px;padding:12px 16px;font-size:13px;color:var(--a3)">⚠️ Nenhum dado encontrado para o período atual. Verifique se há campanhas ativas.</div>';
+      return;
+    }
+
+    const d = data.data[0];
+
+    // Extract leads from actions
+    const leadsAction = (d.actions||[]).find(a=>a.action_type==='lead'||a.action_type==='offsite_conversion.fb_pixel_lead');
+    const leads = leadsAction ? parseInt(leadsAction.value) : 0;
+
+    const spend = parseFloat(d.spend||0);
+    const impressions = parseInt(d.impressions||0);
+    const clicks = parseInt(d.clicks||0);
+    const ctr = parseFloat(d.ctr||0);
+    const cpl = leads > 0 ? (spend/leads).toFixed(2) : 0;
+    const conv = clicks > 0 ? ((leads/clicks)*100).toFixed(2) : 0;
+
+    // Fill in the fields
+    const set = (id, val) => { const el=document.getElementById(id); if(el) el.value=val; };
+    set('mt_periodo', periodo);
+    set('mt_invest', spend.toFixed(2));
+    set('mt_leads', leads);
+    set('mt_cpl', cpl);
+    set('mt_impressoes', impressions);
+    set('mt_cliques', clicks);
+    set('mt_ctr', ctr.toFixed(2));
+    set('mt_conv', conv);
+    set('mt_plataforma', 'Meta Ads');
+
+    statusEl.innerHTML = `<div style="background:rgba(0,200,132,.08);border:1px solid rgba(0,200,132,.3);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--a1)">
+      ✅ <strong>Meta Ads sincronizado!</strong> Período: ${periodo} · 
+      Investimento: R$ ${spend.toFixed(2)} · 
+      Leads: ${leads} · 
+      Impressões: ${impressions.toLocaleString('pt-BR')} · 
+      Cliques: ${clicks.toLocaleString('pt-BR')}
+      <button onclick="saveAll()" class="btn-sm" style="margin-left:12px;background:var(--a1);color:#fff;border-color:var(--a1)">💾 Salvar</button>
+    </div>`;
+
+    showToast('Meta Ads sincronizado com sucesso!');
+
+  }catch(e){
+    statusEl.innerHTML = `<div style="background:#FAEAEA;border:1px solid #E2A0A0;border-radius:10px;padding:12px 16px;font-size:13px;color:var(--a2)">
+      ❌ Erro ao conectar com Meta Ads: ${e.message}
+      <br><span style="font-size:11px;margin-top:4px;display:block;opacity:.8">O token pode ter expirado. Gere um novo no Explorador da Graph API.</span>
+    </div>`;
+    showToast('Erro ao sincronizar Meta Ads.', true);
+  }
 }
 
 // ══════════════════════════════════════════
