@@ -208,9 +208,7 @@ textarea{resize:vertical;min-height:80px;}
     <button class="nav-item" data-page="prazos" onclick="goTo('prazos')"><span class="nicon">📅</span> Objetivos por Prazo</button>
     <button class="nav-item" data-page="equipe" onclick="goTo('equipe')"><span class="nicon">👥</span> Equipe</button>
     <div class="nsep"></div>
-    <button class="nav-item" data-page="email_bv" onclick="goTo('email_bv')"><span class="nicon">💌</span> E-mail Boas-vindas</button>
-    <button class="nav-item" data-page="email_base" onclick="goTo('email_base')"><span class="nicon">📨</span> E-mail Base</button>
-    <button class="nav-item" data-page="enviar_email" onclick="goTo('enviar_email')"><span class="nicon">✉️</span> Enviar E-mail</button>
+    <button class="nav-item" data-page="enviar_email" onclick="goTo('enviar_email')"><span class="nicon">✉️</span> E-mail</button>
     <button class="nav-item" data-page="ig_lista" onclick="goTo('ig_lista')"><span class="nicon">📋</span> Lista Instagram</button>
     <button class="nav-item" data-page="calendario" onclick="goTo('calendario')"><span class="nicon">📆</span> Calendário Editorial</button>
     <button class="nav-item" data-page="video" onclick="goTo('video')"><span class="nicon">🎬</span> TikTok &amp; Shorts</button>
@@ -609,7 +607,7 @@ textarea{resize:vertical;min-height:80px;}
 
     <!-- ENVIAR E-MAIL -->
     <div class="page" id="page-enviar_email">
-      <div class="ph"><div><h2>✉️ Enviar E-mail</h2><p>Conecte sua conta Google e envie e-mails direto pelo dashboard</p></div>
+      <div class="ph"><div><h2>✉️ E-mail</h2><p>Conecte sua conta Google e envie e-mails direto pelo dashboard</p></div>
         <button class="btn-save" id="btn-gmail-connect" onclick="connectGmail()" style="background:#DB4437">🔗 Conectar Gmail</button>
       </div>
 
@@ -623,11 +621,13 @@ textarea{resize:vertical;min-height:80px;}
 
       <!-- TEMPLATES RÁPIDOS -->
       <div class="block" style="margin-bottom:20px">
-        <div class="bh"><div class="bt">⚡ Templates rápidos</div></div>
+        <div class="bh"><div class="bt">⚡ Templates</div></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn-sm" onclick="loadTemplate('bv')">💌 Boas-vindas</button>
           <button class="btn-sm" onclick="loadTemplate('conteudo')">📨 Conteúdo para base</button>
+          <button class="btn-sm" onclick="loadTemplate('novidade')">🚀 Novidade / Lançamento</button>
           <button class="btn-sm" onclick="loadTemplate('evento')">🎙️ Divulgação de evento</button>
+          <button class="btn-sm" onclick="loadTemplate('reativacao')">🔄 Reativação de cliente</button>
           <button class="btn-sm" onclick="loadTemplate('vazio')">✏️ Em branco</button>
         </div>
       </div>
@@ -2291,16 +2291,24 @@ function loadTemplate(tipo) {
   const ebv = D.ebv || {};
   const templates = {
     bv: {
-      assunto: ebv.assunto || 'Seja bem-vindo(a) à Competi! 🎉',
-      corpo: `${ebv.abertura || 'Olá!'}\n\n${ebv.corpo || 'É um prazer tê-lo(a) conosco.'}\n\n${ebv.cta || ''}\n\n${ebv.assinatura || 'Equipe Competi'}`
+      assunto: ebv.assunto || 'Seja bem-vindo(a) à Competi!',
+      corpo: `${ebv.abertura || 'Olá!'}\n\n${ebv.corpo || 'É um prazer tê-lo(a) conosco. Estamos muito felizes em ter você como nosso cliente.'}\n\n${ebv.cta || 'Qualquer dúvida, estamos à disposição!'}\n\n${ebv.assinatura || 'Atenciosamente,\nEquipe Competi'}`
     },
     conteudo: {
-      assunto: 'Novidade da Competi para você 📢',
-      corpo: 'Olá!\n\nTemos uma novidade importante para compartilhar com você...\n\nAté mais,\nEquipe Competi'
+      assunto: 'Uma dica especial para você',
+      corpo: `Olá!\n\nTrouxemos um conteúdo que pode te ajudar no dia a dia...\n\n[Conteúdo aqui]\n\nEsperamos que seja útil!\n\nAtenciosamente,\nEquipe Competi`
+    },
+    novidade: {
+      assunto: 'Novidade Competi: [Nome da novidade]',
+      corpo: `Olá!\n\nTemos uma novidade incrível para compartilhar com você!\n\n[Descreva a novidade aqui]\n\nQuer saber mais? Entre em contato conosco!\n\nAtenciosamente,\nEquipe Competi`
     },
     evento: {
-      assunto: 'Você está convidado(a)! 🎙️',
-      corpo: 'Olá!\n\nGostaríamos de convidá-lo(a) para um evento especial...\n\nAguardamos sua presença!\nEquipe Competi'
+      assunto: 'Você está convidado(a)!',
+      corpo: `Olá!\n\nGostaríamos de convidá-lo(a) para um evento especial...\n\nData: [data]\nLocal: [local]\nHorário: [horário]\n\nConfirme sua presença respondendo este e-mail.\n\nAtenciosamente,\nEquipe Competi`
+    },
+    reativacao: {
+      assunto: 'Sentimos sua falta!',
+      corpo: `Olá!\n\nFaz um tempo que não temos notícias suas e gostaríamos de saber como você está.\n\nTemos novidades e melhorias que podem ser muito úteis para você.\n\nQue tal conversarmos? Estamos à disposição!\n\nAtenciosamente,\nEquipe Competi`
     },
     vazio: { assunto: '', corpo: '' }
   };
