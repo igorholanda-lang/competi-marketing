@@ -455,7 +455,7 @@ textarea{resize:vertical;min-height:80px;}
     </div>
     <!-- EVENTOS -->
     <div class="page" id="page-eventos">
-      <div class="ph"><div><h2>Eventos</h2><p>Reforma Tributária e eventos para contadores</p></div><button class="btn-save" onclick="saveAll()">Salvar</button></div>
+      <div class="ph"><div><h2>Eventos</h2><p>Reforma Tributária e eventos para contadores</p></div><div style="display:flex;gap:8px"><button class="btn-save" style="background:#1A73E8" onclick="sincronizarEventosCalendar()">📅 Sincronizar Google Agenda</button><button class="btn-save" onclick="saveAll()">Salvar</button></div></div>
       <div class="block" style="margin-bottom:16px"><div class="bh"><div class="bt">⚖️ Reforma Tributária</div><span class="tag ty">Oportunidade</span></div>
         <div class="fg"><div class="fld"><label>Posicionamento da Competi</label><textarea id="ev_rt_pos"></textarea></div><div class="fld"><label>Tipos de conteúdo</label><textarea id="ev_rt_cont"></textarea></div><div class="fld"><label>Canais prioritários</label><input type="text" id="ev_rt_canais"></div><div class="fld"><label>Parceiros</label><input type="text" id="ev_rt_parc"></div><div class="fld s2"><label>Calendário editorial</label><textarea id="ev_rt_cal"></textarea></div></div></div>
       <div class="sdiv"><h3>Eventos</h3></div>
@@ -1104,9 +1104,17 @@ function removeIgCliente(i){if(ROLE!=='admin')return;collect();D.ig_lista.splice
 function renderProdutos(){const l=document.getElementById('produtos-list');if(!l)return;l.innerHTML='';(D.produtos||[]).forEach((p,i)=>{const r=document.createElement('div');r.className='block prod-d';r.style.marginBottom='12px';r.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="bt">Produto ${i+1}</div><button class="btn-rm" style="padding:4px 10px;font-size:12px" onclick="removeProduto(${i})">✕ Remover</button></div><div class="fg c3"><div class="fld"><label>Nome</label><input type="text" class="pd-n" value="${p.nome||''}"></div><div class="fld"><label>Preço</label><input type="text" class="pd-p" value="${p.preco||''}"></div><div class="fld"><label>Status</label><select class="pd-s"><option ${(p.status||'')==='Ativo'?'selected':''}>Ativo</option><option ${(p.status||'')==='Em lançamento'?'selected':''}>Em lançamento</option><option ${(p.status||'')==='Descontinuado'?'selected':''}>Descontinuado</option><option ${(p.status||'')==='Em desenvolvimento'?'selected':''}>Em desenvolvimento</option></select></div><div class="fld s3"><label>Descrição</label><textarea class="pd-desc" style="min-height:80px">${p.descricao||''}</textarea></div></div>`;l.appendChild(r);});}
 function addProduto(){if(ROLE!=='admin')return;collect();D.produtos.push({nome:'',descricao:'',preco:'',status:'Ativo'});renderProdutos();}
 function removeProduto(i){if(ROLE!=='admin')return;collect();D.produtos.splice(i,1);renderProdutos();}
-function renderEventosList(){const l=document.getElementById('ev-lista');if(!l)return;l.innerHTML='';((D.eventos||{}).lista||[]).forEach((ev,i)=>{const r=document.createElement('div');r.className='ev-rd';r.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px';r.innerHTML=`<input type="text" class="ev-n" value="${ev.nome||''}" placeholder="Nome"><input type="date" class="ev-d" value="${ev.data||''}"><input type="text" class="ev-f" value="${ev.formato||''}" placeholder="Presencial/Online"><input type="text" class="ev-r" value="${ev.resp||''}" placeholder="Responsável"><select class="ev-s"><option ${(ev.status||'')==='Planejado'?'selected':''}>Planejado</option><option ${(ev.status||'')==='Confirmado'?'selected':''}>Confirmado</option><option ${(ev.status||'')==='Realizado'?'selected':''}>Realizado</option><option ${(ev.status||'')==='Cancelado'?'selected':''}>Cancelado</option></select><button class="btn-rm" onclick="removeEvento(${i})">✕</button>`;l.appendChild(r);});}
+function renderEventosList(){const l=document.getElementById('ev-lista');if(!l)return;l.innerHTML='';((D.eventos||{}).lista||[]).forEach((ev,i)=>{const r=document.createElement('div');r.className='ev-rd';r.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto auto;gap:8px;align-items:center;margin-bottom:8px';r.innerHTML=`<input type="text" class="ev-n" value="${ev.nome||''}" placeholder="Nome"><input type="date" class="ev-d" value="${ev.data||''}"><input type="text" class="ev-f" value="${ev.formato||''}" placeholder="Presencial/Online"><input type="text" class="ev-r" value="${ev.resp||''}" placeholder="Responsável"><select class="ev-s"><option ${(ev.status||'')==='Planejado'?'selected':''}>Planejado</option><option ${(ev.status||'')==='Confirmado'?'selected':''}>Confirmado</option><option ${(ev.status||'')==='Realizado'?'selected':''}>Realizado</option><option ${(ev.status||'')==='Cancelado'?'selected':''}>Cancelado</option></select><button title="Adicionar ao Google Agenda" onclick="adicionarEventoCalendarByIndex(${i})" style="padding:8px 10px;background:#1A73E8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px" >📅</button><button class="btn-rm" onclick="removeEvento(${i})">✕</button>`;l.appendChild(r);});}
 function addEvento(){if(ROLE!=='admin')return;collect();if(!D.eventos)D.eventos={lista:[],rt:{},div:''};D.eventos.lista.push({nome:'',data:'',formato:'',resp:'',status:'Planejado'});renderEventosList();}
 function removeEvento(i){if(ROLE!=='admin')return;collect();D.eventos.lista.splice(i,1);renderEventosList();}
+async function adicionarEventoCalendarByIndex(i){
+  collect();
+  const ev=D.eventos?.lista?.[i];
+  if(!ev){showToast('Evento não encontrado.',true);return;}
+  if(!ev.nome||!ev.data){showToast('Preencha o nome e a data do evento antes de sincronizar.',true);return;}
+  if(!gmailToken){showToast('Conecte o Google primeiro na aba E-mail.',true);return;}
+  await adicionarEventoCalendar(ev);
+}
 function renderEpisodios(){const l=document.getElementById('ep-lista');if(!l)return;l.innerHTML='';((D.podcast||{}).episodios||[]).forEach((ep,i)=>{const r=document.createElement('div');r.className='ep-rd';r.style.cssText='display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px';r.innerHTML=`<input type="text" class="ep-t" value="${ep.titulo||''}" placeholder="Título / tema"><input type="text" class="ep-c" value="${ep.convidado||''}" placeholder="Convidado"><input type="date" class="ep-d" value="${ep.data||''}"><select class="ep-s"><option ${(ep.status||'')==='Planejado'?'selected':''}>Planejado</option><option ${(ep.status||'')==='Agendado'?'selected':''}>Agendado</option><option ${(ep.status||'')==='Gravado'?'selected':''}>Gravado</option><option ${(ep.status||'')==='Publicado'?'selected':''}>Publicado</option></select><button class="btn-rm" onclick="removeEpisodio(${i})">✕</button>`;l.appendChild(r);});}
 function addEpisodio(){if(ROLE!=='admin')return;collect();if(!D.podcast)D.podcast={episodios:[]};D.podcast.episodios.push({titulo:'',convidado:'',data:'',status:'Planejado'});renderEpisodios();}
 function removeEpisodio(i){if(ROLE!=='admin')return;collect();D.podcast.episodios.splice(i,1);renderEpisodios();}
@@ -1440,6 +1448,81 @@ async function deleteDoc(path, cat) {
   if (error) { showToast('Erro ao remover.', true); return; }
   showToast('Arquivo removido!');
   loadDocumentos();
+}
+
+// ══════════════════════════════════════════
+//  GOOGLE CALENDAR
+// ══════════════════════════════════════════
+async function sincronizarEventosCalendar(){
+  if(!gmailToken){
+    showToast('Conecte o Gmail/Google primeiro para acessar o Google Agenda!', true);
+    goTo('enviar_email');
+    return;
+  }
+
+  const eventos = (D.eventos?.lista||[]).filter(e=>e.nome && e.data);
+  if(eventos.length === 0){
+    showToast('Nenhum evento com data cadastrado para sincronizar.', true);
+    return;
+  }
+
+  let criados = 0;
+  let erros = 0;
+
+  for(const ev of eventos){
+    try{
+      await criarEventoCalendar(ev);
+      criados++;
+    }catch(e){
+      erros++;
+      console.error('Erro ao criar evento:', ev.nome, e);
+    }
+  }
+
+  if(criados > 0) showToast(`${criados} evento(s) adicionado(s) ao Google Agenda!`);
+  if(erros > 0) showToast(`${erros} evento(s) não puderam ser sincronizados.`, true);
+}
+
+async function criarEventoCalendar(ev){
+  // Parse date
+  const data = ev.data; // YYYY-MM-DD
+  const hora = ev.hora || '09:00';
+  const startDateTime = `${data}T${hora}:00`;
+  const endHora = hora.split(':').map((v,i)=>i===0?String(parseInt(v)+1).padStart(2,'0'):v).join(':');
+  const endDateTime = `${data}T${endHora}:00`;
+
+  const evento = {
+    summary: ev.nome,
+    description: `Formato: ${ev.formato||'—'}\nResponsável: ${ev.resp||'—'}\nStatus: ${ev.status||'—'}`,
+    start: { dateTime: startDateTime, timeZone: 'America/Sao_Paulo' },
+    end: { dateTime: endDateTime, timeZone: 'America/Sao_Paulo' },
+    colorId: '9' // Azul
+  };
+
+  const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + gmailToken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(evento)
+  });
+
+  const result = await res.json();
+  if(!res.ok) throw new Error(result.error?.message || 'Erro ao criar evento');
+  return result;
+}
+
+async function adicionarEventoCalendar(ev){
+  // Add single event to calendar (called when saving a new event)
+  if(!gmailToken || !ev.data) return;
+  try{
+    await criarEventoCalendar(ev);
+    showToast(`Evento "${ev.nome}" adicionado ao Google Agenda!`);
+  }catch(e){
+    // Silent fail — don't block saving
+    console.error('Calendar sync error:', e);
+  }
 }
 
 // ══════════════════════════════════════════
@@ -2173,7 +2256,7 @@ async function excluirPost(id) {
 //  GMAIL INTEGRATION
 // ══════════════════════════════════════════
 const GMAIL_CLIENT_ID = '1025475705432-raubfku3snh50bf2pi6rhg1hidvkr67g.apps.googleusercontent.com';
-const GMAIL_SCOPES = 'https://www.googleapis.com/auth/gmail.send';
+const GMAIL_SCOPES = 'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/calendar.events';
 let gmailToken = null;
 
 function connectGmail() {
