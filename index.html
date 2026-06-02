@@ -455,10 +455,13 @@ textarea{resize:vertical;min-height:80px;}
     </div>
     <!-- EVENTOS -->
     <div class="page" id="page-eventos">
-      <div class="ph"><div><h2>Eventos</h2><p>Eventos e agenda da equipe</p></div><div style="display:flex;gap:8px"><button class="btn-save" style="background:#1A73E8" onclick="sincronizarEventosCalendar()">📅 Sincronizar Google Agenda</button><button class="btn-save" onclick="saveAll()">Salvar</button></div></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto auto;gap:8px;margin-bottom:6px;padding:0 2px"><label>Nome</label><label>Data</label><label>Formato</label><label>Responsável</label><label>Status</label><div></div><div></div></div>
+      <div class="ph"><div><h2>Eventos</h2><p>Eventos e agenda da equipe</p></div><div style="display:flex;gap:8px"><button class="btn-save" style="background:#1A73E8" onclick="sincronizarEventosCalendar()">📅 Sincronizar Google Agenda</button><button class="btn-save" onclick="abrirModalEvento(null)">+ Novo evento</button></div></div>
       <div id="ev-lista"></div>
-      <button class="btn-add" onclick="addEvento()">+ Adicionar evento</button>
+      <div id="ev-vazio" style="display:none;text-align:center;padding:48px 0;color:var(--muted)">
+        <div style="font-size:48px;margin-bottom:12px">🎙️</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px">Nenhum evento cadastrado</div>
+        <div style="font-size:13px">Clique em "+ Novo evento" para começar</div>
+      </div>
     </div>
     <!-- PODCAST -->
     <div class="page" id="page-podcast">
@@ -871,6 +874,54 @@ textarea{resize:vertical;min-height:80px;}
   </div>
 </div>
 
+<!-- MODAL EVENTO -->
+<div class="modal-overlay" id="modal-evento" style="display:none" onclick="if(event.target===this)fecharModalEvento()">
+  <div class="modal-box" style="max-width:600px">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-evento-title">Novo evento</div>
+      <button class="modal-close" onclick="fecharModalEvento()">✕</button>
+    </div>
+    <div class="fg">
+      <div class="fld s2"><label>Nome do evento</label><input type="text" id="mev-nome" placeholder="Ex: Workshop Reforma Tributária"></div>
+      <div class="fld"><label>Data</label><input type="date" id="mev-data"></div>
+      <div class="fld"><label>Horário</label><input type="time" id="mev-hora" value="09:00"></div>
+      <div class="fld"><label>Formato</label><input type="text" id="mev-formato" placeholder="Ex: Presencial, Online, Híbrido"></div>
+      <div class="fld"><label>Responsável</label><input type="text" id="mev-resp" placeholder="Nome do responsável"></div>
+      <div class="fld"><label>Status</label>
+        <select id="mev-status">
+          <option value="Planejado">📌 Planejado</option>
+          <option value="Confirmado">✅ Confirmado</option>
+          <option value="Realizado">🏁 Realizado</option>
+          <option value="Cancelado">❌ Cancelado</option>
+        </select>
+      </div>
+      <div class="fld s2"><label>Local / Link</label><input type="text" id="mev-local" placeholder="Ex: Auditório Competi / zoom.us/j/..."></div>
+      <div class="fld s2"><label>Descrição do evento</label><textarea id="mev-desc" style="min-height:100px" placeholder="Descreva o evento, programação, palestrantes..."></textarea></div>
+    </div>
+
+    <div class="sdiv" style="margin:16px 0 12px"><h3>📧 E-mail do evento</h3></div>
+    <div class="fg c1" style="gap:10px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="btn-sm" onclick="templateEmailEvento('inscricao')">📋 Convite / Inscrição</button>
+        <button class="btn-sm" onclick="templateEmailEvento('lembrete')">🔔 Lembrete</button>
+        <button class="btn-sm" onclick="templateEmailEvento('confirmacao')">✅ Confirmação</button>
+        <button class="btn-sm" onclick="templateEmailEvento('anuncio')">📢 Anúncio</button>
+      </div>
+      <div class="fld"><label>Para (destinatário do e-mail)</label><input type="email" id="mev-email-para" placeholder="cliente@email.com ou deixe em branco para preencher depois"></div>
+      <div class="fld"><label>Assunto</label><input type="text" id="mev-email-assunto"></div>
+      <div class="fld"><label>Mensagem</label><textarea id="mev-email-corpo" style="min-height:120px"></textarea></div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn-sm" onclick="fecharModalEvento()">Cancelar</button>
+      <button class="btn-sm danger" id="mev-delete-btn" style="display:none" onclick="excluirEvento()">🗑 Excluir</button>
+      <button class="btn-save" style="background:#1A73E8" onclick="salvarEventoEAgenda()">📅 Salvar + Google Agenda</button>
+      <button class="btn-sm" onclick="enviarEmailEvento()" style="background:#DB4437;color:#fff;border-color:#DB4437">📧 Enviar e-mail</button>
+      <button class="btn-save" onclick="salvarEvento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL POST -->
 <div class="modal-overlay" id="modal-post" style="display:none" onclick="fecharModalPost(event)">
   <div class="modal-box">
@@ -1100,11 +1151,174 @@ function removeIgCliente(i){if(ROLE!=='admin')return;collect();D.ig_lista.splice
 function renderProdutos(){const l=document.getElementById('produtos-list');if(!l)return;l.innerHTML='';(D.produtos||[]).forEach((p,i)=>{const r=document.createElement('div');r.className='block prod-d';r.style.marginBottom='12px';r.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div class="bt">Produto ${i+1}</div><button class="btn-rm" style="padding:4px 10px;font-size:12px" onclick="removeProduto(${i})">✕ Remover</button></div><div class="fg c3"><div class="fld"><label>Nome</label><input type="text" class="pd-n" value="${p.nome||''}"></div><div class="fld"><label>Preço</label><input type="text" class="pd-p" value="${p.preco||''}"></div><div class="fld"><label>Status</label><select class="pd-s"><option ${(p.status||'')==='Ativo'?'selected':''}>Ativo</option><option ${(p.status||'')==='Em lançamento'?'selected':''}>Em lançamento</option><option ${(p.status||'')==='Descontinuado'?'selected':''}>Descontinuado</option><option ${(p.status||'')==='Em desenvolvimento'?'selected':''}>Em desenvolvimento</option></select></div><div class="fld s3"><label>Descrição</label><textarea class="pd-desc" style="min-height:80px">${p.descricao||''}</textarea></div></div>`;l.appendChild(r);});}
 function addProduto(){if(ROLE!=='admin')return;collect();D.produtos.push({nome:'',descricao:'',preco:'',status:'Ativo'});renderProdutos();}
 function removeProduto(i){if(ROLE!=='admin')return;collect();D.produtos.splice(i,1);renderProdutos();}
-function renderEventosList(){const l=document.getElementById('ev-lista');if(!l)return;l.innerHTML='';((D.eventos||{}).lista||[]).forEach((ev,i)=>{const r=document.createElement('div');r.className='ev-rd';r.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto auto;gap:8px;align-items:center;margin-bottom:8px';r.innerHTML=`<input type="text" class="ev-n" value="${ev.nome||''}" placeholder="Nome"><input type="date" class="ev-d" value="${ev.data||''}"><input type="text" class="ev-f" value="${ev.formato||''}" placeholder="Presencial/Online"><input type="text" class="ev-r" value="${ev.resp||''}" placeholder="Responsável"><select class="ev-s"><option ${(ev.status||'')==='Planejado'?'selected':''}>Planejado</option><option ${(ev.status||'')==='Confirmado'?'selected':''}>Confirmado</option><option ${(ev.status||'')==='Realizado'?'selected':''}>Realizado</option><option ${(ev.status||'')==='Cancelado'?'selected':''}>Cancelado</option></select><button title="Adicionar ao Google Agenda" onclick="adicionarEventoCalendarByIndex(${i})" style="padding:8px 10px;background:#1A73E8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px" >📅</button><button class="btn-rm" onclick="removeEvento(${i})">✕</button>`;l.appendChild(r);});}
-function addEvento(){if(ROLE!=='admin')return;collect();if(!D.eventos)D.eventos={lista:[],rt:{},div:''};D.eventos.lista.push({nome:'',data:'',formato:'',resp:'',status:'Planejado'});renderEventosList();}
+function renderEventosList(){
+  const l=document.getElementById('ev-lista');
+  const vazio=document.getElementById('ev-vazio');
+  if(!l)return;
+  const lista=(D.eventos?.lista||[]);
+  if(lista.length===0){l.innerHTML='';if(vazio)vazio.style.display='block';return;}
+  if(vazio)vazio.style.display='none';
+  const statusColors={Planejado:'#666',Confirmado:'var(--a1)',Realizado:'var(--a4)',Cancelado:'var(--a2)'};
+  const statusBg={Planejado:'#E8E8E8',Confirmado:'rgba(0,200,132,.12)',Realizado:'rgba(61,58,184,.12)',Cancelado:'rgba(201,64,64,.12)'};
+  l.innerHTML=lista.map((ev,i)=>`
+    <div class="block" style="margin-bottom:10px;cursor:pointer" onclick="abrirModalEvento(${i})">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:24px">🎙️</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">${ev.nome||'Sem nome'}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">
+            ${ev.data?'📅 '+new Date(ev.data+'T12:00:00').toLocaleDateString('pt-BR'):'Sem data'}
+            ${ev.hora?' · ⏰ '+ev.hora:''}
+            ${ev.formato?' · '+ev.formato:''}
+            ${ev.resp?' · 👤 '+ev.resp:''}
+          </div>
+          ${ev.local?`<div style="font-size:12px;color:var(--muted)">📍 ${ev.local}</div>`:''}
+          ${ev.desc?`<div style="font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4">${ev.desc.substring(0,100)}${ev.desc.length>100?'...':''}</div>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;background:${statusBg[ev.status]||'#eee'};color:${statusColors[ev.status]||'#666'}">${ev.status||'Planejado'}</span>
+          <button title="Google Agenda" onclick="event.stopPropagation();adicionarEventoCalendarByIndex(${i})" style="padding:6px 8px;background:#1A73E8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">📅</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+let editingEventoIdx = null;
+
+function abrirModalEvento(idx){
+  editingEventoIdx = idx;
+  const delBtn = document.getElementById('mev-delete-btn');
+  if(idx !== null && idx !== undefined){
+    const ev = D.eventos?.lista?.[idx];
+    if(!ev) return;
+    document.getElementById('modal-evento-title').textContent = 'Editar evento';
+    document.getElementById('mev-nome').value = ev.nome||'';
+    document.getElementById('mev-data').value = ev.data||'';
+    document.getElementById('mev-hora').value = ev.hora||'09:00';
+    document.getElementById('mev-formato').value = ev.formato||'';
+    document.getElementById('mev-resp').value = ev.resp||'';
+    document.getElementById('mev-status').value = ev.status||'Planejado';
+    document.getElementById('mev-local').value = ev.local||'';
+    document.getElementById('mev-desc').value = ev.desc||'';
+    document.getElementById('mev-email-para').value = ev.emailPara||'';
+    document.getElementById('mev-email-assunto').value = ev.emailAssunto||'';
+    document.getElementById('mev-email-corpo').value = ev.emailCorpo||'';
+    if(delBtn) delBtn.style.display='inline-flex';
+  } else {
+    document.getElementById('modal-evento-title').textContent = 'Novo evento';
+    ['mev-nome','mev-data','mev-formato','mev-resp','mev-local','mev-desc','mev-email-para','mev-email-assunto','mev-email-corpo'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('mev-hora').value='09:00';
+    document.getElementById('mev-status').value='Planejado';
+    if(delBtn) delBtn.style.display='none';
+  }
+  document.getElementById('modal-evento').style.display='flex';
+}
+
+function fecharModalEvento(){
+  document.getElementById('modal-evento').style.display='none';
+  editingEventoIdx=null;
+}
+
+function coletarEvento(){
+  return {
+    nome: document.getElementById('mev-nome').value.trim(),
+    data: document.getElementById('mev-data').value,
+    hora: document.getElementById('mev-hora').value,
+    formato: document.getElementById('mev-formato').value,
+    resp: document.getElementById('mev-resp').value,
+    status: document.getElementById('mev-status').value,
+    local: document.getElementById('mev-local').value,
+    desc: document.getElementById('mev-desc').value,
+    emailPara: document.getElementById('mev-email-para').value,
+    emailAssunto: document.getElementById('mev-email-assunto').value,
+    emailCorpo: document.getElementById('mev-email-corpo').value,
+  };
+}
+
+async function salvarEvento(){
+  const ev = coletarEvento();
+  if(!ev.nome){showToast('Preencha o nome do evento.',true);return;}
+  if(!D.eventos) D.eventos={lista:[],rt:{},div:''};
+  if(editingEventoIdx !== null && editingEventoIdx !== undefined){
+    D.eventos.lista[editingEventoIdx] = ev;
+  } else {
+    D.eventos.lista.push(ev);
+  }
+  await saveAll();
+  fecharModalEvento();
+  renderEventosList();
+}
+
+async function salvarEventoEAgenda(){
+  const ev = coletarEvento();
+  if(!ev.nome){showToast('Preencha o nome do evento.',true);return;}
+  if(!D.eventos) D.eventos={lista:[],rt:{},div:''};
+  if(editingEventoIdx !== null && editingEventoIdx !== undefined){
+    D.eventos.lista[editingEventoIdx] = ev;
+  } else {
+    D.eventos.lista.push(ev);
+  }
+  await saveAll();
+  if(ev.data) await adicionarEventoCalendar(ev);
+  fecharModalEvento();
+  renderEventosList();
+}
+
+async function excluirEvento(){
+  if(!confirm('Excluir este evento?'))return;
+  D.eventos.lista.splice(editingEventoIdx,1);
+  await saveAll();
+  fecharModalEvento();
+  renderEventosList();
+}
+
+async function enviarEmailEvento(){
+  const para = document.getElementById('mev-email-para').value.trim();
+  const assunto = document.getElementById('mev-email-assunto').value.trim();
+  const corpo = document.getElementById('mev-email-corpo').value.trim();
+  if(!para||!assunto||!corpo){showToast('Preencha destinatário, assunto e mensagem.',true);return;}
+  if(!gmailToken){showToast('Conecte o Gmail primeiro na aba E-mail.',true);return;}
+  await enviarEmailDireto(para, assunto, corpo);
+  showToast('E-mail do evento enviado!');
+}
+
+function templateEmailEvento(tipo){
+  const nome = document.getElementById('mev-nome').value||'[Nome do evento]';
+  const data = document.getElementById('mev-data').value;
+  const hora = document.getElementById('mev-hora').value||'';
+  const local = document.getElementById('mev-local').value||'[Local/Link]';
+  const dataFmt = data ? new Date(data+'T12:00:00').toLocaleDateString('pt-BR') : '[data]';
+  const desc = document.getElementById('mev-desc').value||'';
+
+  const templates = {
+    inscricao: {
+      assunto: `Convite: ${nome}`,
+      corpo: `Olá!\n\nConvidamos você para participar do nosso evento:\n\n📌 ${nome}\n📅 Data: ${dataFmt}${hora?' às '+hora:''}\n📍 Local: ${local}\n\n${desc}\n\nPara se inscrever, responda este e-mail ou acesse o link de inscrição.\n\nAtenciosamente,\nEquipe Competi`
+    },
+    lembrete: {
+      assunto: `Lembrete: ${nome} - ${dataFmt}`,
+      corpo: `Olá!\n\nPassando para lembrar que o evento está chegando!\n\n📌 ${nome}\n📅 Data: ${dataFmt}${hora?' às '+hora:''}\n📍 Local: ${local}\n\nEsperamos por você!\n\nAtenciosamente,\nEquipe Competi`
+    },
+    confirmacao: {
+      assunto: `Confirmação de inscrição: ${nome}`,
+      corpo: `Olá!\n\nSua inscrição foi confirmada!\n\n📌 ${nome}\n📅 Data: ${dataFmt}${hora?' às '+hora:''}\n📍 Local: ${local}\n\n${desc}\n\nQualquer dúvida estamos à disposição.\n\nAtenciosamente,\nEquipe Competi`
+    },
+    anuncio: {
+      assunto: `Novidade: ${nome}`,
+      corpo: `Olá!\n\nTemos o prazer de anunciar um novo evento!\n\n📌 ${nome}\n📅 Data: ${dataFmt}${hora?' às '+hora:''}\n📍 Local: ${local}\n\n${desc}\n\nNão perca esta oportunidade!\n\nAtenciosamente,\nEquipe Competi`
+    }
+  };
+
+  const t = templates[tipo];
+  if(t){
+    document.getElementById('mev-email-assunto').value = t.assunto;
+    document.getElementById('mev-email-corpo').value = t.corpo;
+  }
+}
+
+function addEvento(){if(ROLE!=='admin')return;abrirModalEvento(null);}
 function removeEvento(i){if(ROLE!=='admin')return;collect();D.eventos.lista.splice(i,1);renderEventosList();}
 async function adicionarEventoCalendarByIndex(i){
-  collect();
   const ev=D.eventos?.lista?.[i];
   if(!ev){showToast('Evento não encontrado.',true);return;}
   if(!ev.nome||!ev.data){showToast('Preencha o nome e a data do evento antes de sincronizar.',true);return;}
