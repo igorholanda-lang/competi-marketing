@@ -718,6 +718,22 @@ textarea{resize:vertical;min-height:80px;}
 </div>
 <div id="notif-overlay" style="display:none;position:fixed;inset:0;z-index:199" onclick="toggleNotifPanel()"></div>
 
+<!-- MODAL PRÉVIA DOCUMENTO -->
+<div class="modal-overlay" id="modal-doc-preview" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box" style="max-width:800px;width:95vw">
+    <div class="modal-header">
+      <div class="modal-title" id="doc-preview-title" style="font-size:14px;max-width:600px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-save" id="doc-preview-dl" style="font-size:12px;padding:7px 14px">Baixar</button>
+        <button class="modal-close" onclick="document.getElementById('modal-doc-preview').style.display='none'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="doc-preview-content" style="display:flex;align-items:center;justify-content:center;min-height:200px"></div>
+  </div>
+</div>
+
 <!-- MODAL WHATSAPP -->
 <div class="modal-overlay" id="modal-whatsapp" style="display:none" onclick="if(event.target===this)this.style.display='none'">
   <div class="modal-box" style="max-width:500px">
@@ -1633,16 +1649,44 @@ async function loadDocumentos() {
       const icon = docIcon(f.name);
       const displayName = f.name.replace(/^\d+_/, '');
       const size = formatBytes(f.metadata?.size);
+      const ext = displayName.split('.').pop().toLowerCase();
+      const isImage = ['jpg','jpeg','png','gif','webp','svg'].includes(ext);
+      const isPdf = ext === 'pdf';
+      const canPreview = isImage || isPdf;
+      const fullPath = `${cat}/${f.name}`;
+
       return `<div class="doc-card">
-        <div class="doc-icon">${icon}</div>
+        ${isImage
+          ? `<div style="width:100%;height:100px;border-radius:8px;overflow:hidden;background:var(--s2);cursor:pointer" onclick="previewDoc('${fullPath}','${displayName}','${ext}')">
+               <img src="" data-path="${fullPath}" class="doc-thumb" style="width:100%;height:100%;object-fit:cover;display:none" onload="this.style.display='block'">
+               <div class="doc-icon doc-thumb-placeholder">${icon}</div>
+             </div>`
+          : `<div class="doc-icon" style="${canPreview?'cursor:pointer':''}" ${canPreview?`onclick="previewDoc('${fullPath}','${displayName}','${ext}')"`:''}>${icon}</div>`
+        }
         <div class="doc-name">${displayName}</div>
         ${size ? `<div class="doc-size">${size}</div>` : ''}
         <div class="doc-actions">
-          <button class="btn-dl" onclick="downloadDoc('${cat}/${f.name}','${displayName}')">Baixar</button>
-          <button class="btn-del" onclick="deleteDoc('${cat}/${f.name}','${cat}')"></button>
+          ${canPreview ? `<button class="btn-sm" style="flex:1" onclick="previewDoc('${fullPath}','${displayName}','${ext}')">Ver</button>` : ''}
+          <button class="btn-dl" onclick="downloadDoc('${fullPath}','${displayName}')" style="${canPreview?'':'flex:1'}">Baixar</button>
+          <button class="btn-del" onclick="deleteDoc('${fullPath}','${cat}')" style="padding:6px 8px;display:flex;align-items:center;justify-content:center">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+          </button>
         </div>
       </div>`;
     }).join('');
+
+    // Load image thumbnails
+    el.querySelectorAll('.doc-thumb').forEach(async img => {
+      try {
+        const {data} = await sb.storage.from('Documentos').download(img.dataset.path);
+        if(data){
+          const url = URL.createObjectURL(data);
+          img.src = url;
+          const placeholder = img.parentElement.querySelector('.doc-thumb-placeholder');
+          if(placeholder) placeholder.style.display='none';
+        }
+      } catch(e){}
+    });
   }
 }
 
@@ -1653,6 +1697,33 @@ async function downloadDoc(path, nome) {
   const a = document.createElement('a');
   a.href = url; a.download = nome; a.click();
   URL.revokeObjectURL(url);
+}
+
+async function previewDoc(path, nome, ext){
+  const modal = document.getElementById('modal-doc-preview');
+  const content = document.getElementById('doc-preview-content');
+  const title = document.getElementById('doc-preview-title');
+  const dlBtn = document.getElementById('doc-preview-dl');
+  if(!modal) return;
+
+  title.textContent = nome;
+  content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">Carregando...</div>';
+  dlBtn.onclick = () => downloadDoc(path, nome);
+  modal.style.display = 'flex';
+
+  try{
+    const {data, error} = await sb.storage.from('Documentos').download(path);
+    if(error) throw error;
+    const url = URL.createObjectURL(data);
+    const isImage = ['jpg','jpeg','png','gif','webp','svg'].includes(ext);
+    if(isImage){
+      content.innerHTML = `<img src="${url}" style="max-width:100%;max-height:70vh;border-radius:8px;object-fit:contain">`;
+    } else if(ext==='pdf'){
+      content.innerHTML = `<iframe src="${url}" style="width:100%;height:70vh;border:none;border-radius:8px"></iframe>`;
+    }
+  }catch(e){
+    content.innerHTML = `<div style="text-align:center;padding:40px;color:var(--a2)">Não foi possível carregar a prévia.</div>`;
+  }
 }
 
 async function deleteDoc(path, cat) {
