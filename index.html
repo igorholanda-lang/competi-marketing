@@ -1020,6 +1020,8 @@ async function bootApp(user){
   await loadData();
   init();
   renderNotifs();
+  // Register last access
+  await sb.from('profiles').update({ultimo_acesso: new Date().toISOString()}).eq('id', user.id);
 }
 async function doLogout(){await sb.auth.signOut();CU=null;ROLE=null;document.getElementById('app-screen').style.display='none';document.getElementById('login-screen').style.display='flex';document.getElementById('lin-pass').value='';document.getElementById('lerr').textContent='';document.getElementById('btn-login').disabled=false;}
 function setRO(ro){document.querySelectorAll('#app-screen input,#app-screen textarea,#app-screen select').forEach(el=>{if(ro)el.setAttribute('disabled','');else el.removeAttribute('disabled');});document.querySelectorAll('.btn-save,.btn-add,.btn-rm,.sopt').forEach(el=>{el.disabled=ro;el.style.pointerEvents=ro?'none':'';});}
@@ -1439,6 +1441,26 @@ async function trocarSenha(){
   // Save flag that password was changed
   sessionStorage.setItem('senha_trocada','1');
 }
+function formatUltimoAcesso(ts){
+  if(!ts) return 'Nunca acessou';
+  const d = new Date(ts);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 1000); // seconds
+  if(diff < 60) return 'Agora mesmo';
+  if(diff < 3600) return `Há ${Math.floor(diff/60)} min`;
+  if(diff < 86400) return `Há ${Math.floor(diff/3600)}h`;
+  if(diff < 172800) return 'Ontem';
+  if(diff < 604800) return `Há ${Math.floor(diff/86400)} dias`;
+  return d.toLocaleDateString('pt-BR');
+}
+
+function statusAcesso(ts){
+  if(!ts) return {cor:'#ccc', label:'Offline'};
+  const diff = Math.floor((new Date() - new Date(ts)) / 1000);
+  if(diff < 300) return {cor:'#00C884', label:'Online'};      // < 5 min
+  if(diff < 3600) return {cor:'#F4C842', label:'Recente'};    // < 1h
+  return {cor:'#ccc', label:'Offline'};
+}
 async function loadUsers(){
   const{data:profiles}=await sbAdmin.from('profiles').select('*').order('nome');
   const l=document.getElementById('users-list');
@@ -1446,8 +1468,17 @@ async function loadUsers(){
   l.innerHTML=profiles.map((u,i)=>{
     const roleBadge=u.role==='admin'?'<span class="rbadge ra">Admin</span>':u.role==='financeiro'?'<span class="rbadge" style="background:rgba(184,134,11,.12);color:var(--a3)">Financeiro</span>':'<span class="rbadge rm">Membro</span>';
     const isSelf=u.id===CU.id;
+    const status=statusAcesso(u.ultimo_acesso);
+    const acesso=formatUltimoAcesso(u.ultimo_acesso);
     return `<div class="ucard">
-      <div style="flex:1"><div class="ucn">${u.nome||'—'}</div><div class="uce">${u.email}</div></div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${status.cor};flex-shrink:0" title="${status.label}"></div>
+          <div class="ucn">${u.nome||'—'}</div>
+        </div>
+        <div class="uce">${u.email}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${acesso}</div>
+      </div>
       <div style="display:flex;align-items:center;gap:8px">
         ${roleBadge}
         ${isSelf
