@@ -455,14 +455,10 @@ textarea{resize:vertical;min-height:80px;}
     </div>
     <!-- EVENTOS -->
     <div class="page" id="page-eventos">
-      <div class="ph"><div><h2>Eventos</h2><p>Reforma Tributária e eventos para contadores</p></div><div style="display:flex;gap:8px"><button class="btn-save" style="background:#1A73E8" onclick="sincronizarEventosCalendar()">📅 Sincronizar Google Agenda</button><button class="btn-save" onclick="saveAll()">Salvar</button></div></div>
-      <div class="block" style="margin-bottom:16px"><div class="bh"><div class="bt">⚖️ Reforma Tributária</div><span class="tag ty">Oportunidade</span></div>
-        <div class="fg"><div class="fld"><label>Posicionamento da Competi</label><textarea id="ev_rt_pos"></textarea></div><div class="fld"><label>Tipos de conteúdo</label><textarea id="ev_rt_cont"></textarea></div><div class="fld"><label>Canais prioritários</label><input type="text" id="ev_rt_canais"></div><div class="fld"><label>Parceiros</label><input type="text" id="ev_rt_parc"></div><div class="fld s2"><label>Calendário editorial</label><textarea id="ev_rt_cal"></textarea></div></div></div>
-      <div class="sdiv"><h3>Eventos</h3></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:8px;margin-bottom:6px;padding:0 2px"><label>Nome</label><label>Data</label><label>Formato</label><label>Responsável</label><label>Status</label><div></div></div>
+      <div class="ph"><div><h2>Eventos</h2><p>Eventos e agenda da equipe</p></div><div style="display:flex;gap:8px"><button class="btn-save" style="background:#1A73E8" onclick="sincronizarEventosCalendar()">📅 Sincronizar Google Agenda</button><button class="btn-save" onclick="saveAll()">Salvar</button></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto auto;gap:8px;margin-bottom:6px;padding:0 2px"><label>Nome</label><label>Data</label><label>Formato</label><label>Responsável</label><label>Status</label><div></div><div></div></div>
       <div id="ev-lista"></div>
       <button class="btn-add" onclick="addEvento()">+ Adicionar evento</button>
-      <div class="block" style="margin-top:16px"><div class="bh"><div class="bt">📣 Divulgação</div></div><div class="fld"><textarea id="ev_div"></textarea></div></div>
     </div>
     <!-- PODCAST -->
     <div class="page" id="page-podcast">
