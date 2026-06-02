@@ -682,7 +682,7 @@ textarea{resize:vertical;min-height:80px;}
           <div class="fld"><label>Nome completo</label><input type="text" id="inv-nome" placeholder="Ex: João Silva"></div>
           <div class="fld"><label>E-mail</label><input type="email" id="inv-email" placeholder="joao@competi.com.br"></div>
           <div class="fld"><label>Senha temporária</label><input type="text" id="inv-senha" placeholder="Mínimo 6 caracteres"></div>
-          <div class="fld"><label>Nível</label><select id="inv-role"><option value="member">Membro (só visualiza)</option><option value="financeiro">Financeiro (edita clientes)</option><option value="admin">✏️ Admin (edita tudo)</option></select></div>
+          <div class="fld"><label>Nível</label><select id="inv-role"><option value="member">Membro (só visualiza)</option><option value="financeiro">Financeiro (edita clientes)</option><option value="admin">Admin (edita tudo)</option></select></div>
           <div class="fld" style="justify-content:flex-end"><button class="btn-save" onclick="inviteUser()" style="margin-top:22px">Criar</button></div>
         </div>
         <div style="margin-top:12px;display:flex;align-items:center;gap:8px">
@@ -999,7 +999,7 @@ async function bootApp(user){
   document.getElementById('nav-av').textContent=nome[0].toUpperCase();
 
   if(ROLE==='admin'){
-    document.getElementById('nav-rl').textContent='✏️ Administrador';
+    document.getElementById('nav-rl').textContent='Administrador';
     document.getElementById('nav-users').style.display='flex';
   } else if(ROLE==='financeiro'){
     document.getElementById('nav-rl').textContent='Financeiro';
@@ -1454,7 +1454,7 @@ async function loadUsers(){
           ? '<span style="font-size:12px;color:var(--muted)">Você</span>'
           : `<select onchange="mudarRole('${u.id}',this.value)" style="padding:5px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;background:var(--surface);cursor:pointer">
               <option value="">Alterar nível...</option>
-              <option value="admin" ${u.role==='admin'?'disabled':''}>✏️ Admin</option>
+              <option value="admin" ${u.role==='admin'?'disabled':''}>Admin</option>
               <option value="financeiro" ${u.role==='financeiro'?'disabled':''}>Financeiro</option>
               <option value="member" ${u.role==='member'?'disabled':''}>Membro</option>
             </select>
